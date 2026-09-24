@@ -1,0 +1,35 @@
+import type { CardInstance, UnitCardInstance } from './card.types'
+
+export interface PlayerState {
+  id: string
+  reputation: number
+  maxEnergy: number
+  energy: number
+  reservedEnergy: number
+  deck: CardInstance[]
+  hand: CardInstance[]
+  board: UnitCardInstance[]
+  graveyard: CardInstance[]
+  hasAttackToken: boolean
+}
+
+export interface CombatSlot {
+  attacker: UnitCardInstance
+  blocker: UnitCardInstance | null
+}
+
+export interface CombatState {
+  attackerPlayerId: string
+  defenderPlayerId: string
+  slots: CombatSlot[]
+}
+
+export interface GameState {
+  players: Record<string, PlayerState>
+  round: number
+  initiativePlayerId: string
+  turnPlayerId: string
+  combat: CombatState | null
+  winnerPlayerId: string | null
+  consecutivePasses: number
+}
