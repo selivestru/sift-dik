@@ -62,6 +62,17 @@ export const declareBlocksAction = (
 
   const blockerIdSet = new Set(defenderIds)
   const blockerUnits = defenderState.board.filter((u) => blockerIdSet.has(u.instanceId))
+
+  const hasCannotBlockUnit = blockerUnits.some((unit) =>
+    unit.keywords?.includes(UNIT_KEYWORD.CANNOT_BLOCK),
+  )
+
+  if (hasCannotBlockUnit) {
+    throw new Error(
+      'Cannot declare block: one or more defender units have the "cannot_block" keyword',
+    )
+  }
+
   defenderState.board = defenderState.board.filter((u) => !blockerIdSet.has(u.instanceId))
 
   for (const block of action.blocks) {

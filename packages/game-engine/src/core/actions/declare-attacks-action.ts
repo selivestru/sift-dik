@@ -1,4 +1,10 @@
-import type { DeclareAttacksAction, GameEvent, GameState, UnitCardInstance } from '../../types'
+import {
+  UNIT_KEYWORD,
+  type DeclareAttacksAction,
+  type GameEvent,
+  type GameState,
+  type UnitCardInstance,
+} from '../../types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
 import type { ApplyActionResult } from '../apply-action'
 
@@ -46,6 +52,15 @@ export const declareAttacksAction = (
     throw new Error(
       `Cannot declare attack: one or more attackers are not present on player "${action.playerId}" board`,
     )
+  }
+
+  const hasCannotAttackUnit = action.attackers.some((id) => {
+    const unit = playerState.board.find((u) => u.instanceId === id)
+    return unit?.keywords?.includes(UNIT_KEYWORD.CANNOT_ATTACK)
+  })
+
+  if (hasCannotAttackUnit) {
+    throw new Error('Cannot declare attack: one or more attackers have the "cannot_attack" keyword')
   }
 
   nextState.combat = {
