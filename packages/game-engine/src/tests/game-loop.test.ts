@@ -1,19 +1,27 @@
 import { describe, expect, test } from 'vitest'
 
 import { applyAction, createGame } from '../core'
-import type { CardDefinition } from '../types'
+import {
+  CARD_FACTION,
+  CARD_TYPE,
+  GAME_ACTION_TYPE,
+  GAME_EVENT_TYPE,
+  type CardDefinition,
+} from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
 const mockUnit: CardDefinition = {
   id: 'test-unit',
   name: 'Test Unit',
   description: 'Vanilla unit',
-  faction: 'dik',
+  faction: CARD_FACTION.DIK,
   baseCost: 1,
   cost: 1,
-  type: 'unit',
+  type: CARD_TYPE.UNIT,
+  maxAttack: 3,
   baseAttack: 2,
   attack: 2,
+  maxHealth: 3,
   baseHealth: 3,
   health: 3,
 }
@@ -62,7 +70,7 @@ describe('Game Engine - Layer 0', () => {
     const cardToPlay = activePlayer.hand[0]!
 
     const result = applyAction(state, {
-      type: 'PLAY_UNIT',
+      type: GAME_ACTION_TYPE.PLAY_UNIT,
       playerId: activePlayerId,
       cardInstanceId: cardToPlay.instanceId,
     })
@@ -77,12 +85,12 @@ describe('Game Engine - Layer 0', () => {
 
     expect(result.events).toEqual([
       {
-        type: 'ENERGY_CHANGED',
+        type: GAME_EVENT_TYPE.ENERGY_CHANGED,
         energy: 0,
         playerId: activePlayerId,
       },
       {
-        type: 'UNIT_SPAWNED',
+        type: GAME_EVENT_TYPE.UNIT_SPAWNED,
         playerId: activePlayerId,
         unit: cardToPlay,
       },
@@ -98,21 +106,21 @@ describe('Game Engine - Layer 0', () => {
 
     const p2Card = state.players[attackerId]!.hand[0]!
     const stateAfterP2Play = applyAction(state, {
-      type: 'PLAY_UNIT',
+      type: GAME_ACTION_TYPE.PLAY_UNIT,
       playerId: attackerId,
       cardInstanceId: p2Card.instanceId,
     }).state
 
     const p1Card = stateAfterP2Play.players[defenderId]!.hand[0]!
     const stateAfterP1Play = applyAction(stateAfterP2Play, {
-      type: 'PLAY_UNIT',
+      type: GAME_ACTION_TYPE.PLAY_UNIT,
       playerId: defenderId,
       cardInstanceId: p1Card.instanceId,
     }).state
 
     const attackingUnitId = stateAfterP1Play.players[attackerId]!.board[0]!.instanceId
     const attackResult = applyAction(stateAfterP1Play, {
-      type: 'DECLARE_ATTACKS',
+      type: GAME_ACTION_TYPE.DECLARE_ATTACKS,
       playerId: attackerId,
       attackers: [attackingUnitId],
     })
@@ -124,7 +132,7 @@ describe('Game Engine - Layer 0', () => {
 
     const defendingUnitId = attackResult.state.players[defenderId]!.board[0]!.instanceId
     const combatResult = applyAction(attackResult.state, {
-      type: 'DECLARE_BLOCKS',
+      type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: defenderId,
       blocks: [{ attackerInstanceId: attackingUnitId, defenderInstanceId: defendingUnitId }],
     })
@@ -146,7 +154,7 @@ describe('Game Engine - Layer 0', () => {
     const state = createGame([p1, p2], { seed: 42 }) // round 1 initiative: p2
 
     const firstPassResult = applyAction(state, {
-      type: 'PASS',
+      type: GAME_ACTION_TYPE.PASS,
       playerId: state.turnPlayerId,
     })
 
@@ -155,7 +163,7 @@ describe('Game Engine - Layer 0', () => {
     expect(firstPassResult.state.turnPlayerId).toBe(p1.id)
 
     const secondPassResult = applyAction(firstPassResult.state, {
-      type: 'PASS',
+      type: GAME_ACTION_TYPE.PASS,
       playerId: firstPassResult.state.turnPlayerId,
     })
 

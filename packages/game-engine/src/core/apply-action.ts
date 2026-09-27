@@ -1,4 +1,4 @@
-import { type GameAction, type GameEvent, type GameState } from '../types'
+import { GAME_ACTION_TYPE, type GameAction, type GameEvent, type GameState } from '../types'
 import { declareAttacksAction } from './actions/declare-attacks-action'
 import { declareBlocksAction } from './actions/declare-blocks-action'
 import { passAction } from './actions/pass-action'
@@ -11,13 +11,13 @@ export interface ApplyActionResult {
 
 export const applyAction = (state: GameState, action: GameAction): ApplyActionResult => {
   switch (action.type) {
-    case 'PLAY_UNIT':
+    case GAME_ACTION_TYPE.PLAY_UNIT:
       return playUnitAction(state, action)
-    case 'DECLARE_ATTACKS':
+    case GAME_ACTION_TYPE.DECLARE_ATTACKS:
       return declareAttacksAction(state, action)
-    case 'DECLARE_BLOCKS':
+    case GAME_ACTION_TYPE.DECLARE_BLOCKS:
       return declareBlocksAction(state, action)
-    case 'PASS':
+    case GAME_ACTION_TYPE.PASS:
       return passAction(state, action)
   }
 }

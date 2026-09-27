@@ -23,12 +23,25 @@ export interface BaseCard {
   cost: number
 }
 
+export const UNIT_KEYWORD = {
+  QUICK_ATTACK: 'quick_attack',
+  DOUBLE_ATTACK: 'double_attack',
+  LIFESTEAL: 'lifesteal',
+  REGENERATION: 'regeneration',
+  TOUGH: 'tough',
+} as const
+
+export type UnitKeyword = (typeof UNIT_KEYWORD)[keyof typeof UNIT_KEYWORD]
+
 export interface UnitCard extends BaseCard {
   type: typeof CARD_TYPE.UNIT
+  maxHealth: number
   baseHealth: number
   health: number
+  maxAttack: number
   baseAttack: number
   attack: number
+  keywords?: UnitKeyword[]
 }
 
 export interface UnitCardInstance extends UnitCard {

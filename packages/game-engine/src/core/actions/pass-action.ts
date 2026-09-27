@@ -1,5 +1,12 @@
 import { MAX_CARDS_IN_HAND } from '../../constants/game'
-import type { GameEvent, GameState, PassAction } from '../../types'
+import {
+  CARD_TYPE,
+  GAME_EVENT_TYPE,
+  UNIT_KEYWORD,
+  type GameEvent,
+  type GameState,
+  type PassAction,
+} from '../../types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
 import type { ApplyActionResult } from '../apply-action'
 
@@ -23,7 +30,33 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
   nextState.consecutivePasses += 1
 
   if (nextState.consecutivePasses === 2) {
-    events.push({ type: 'ROUND_ENDED', round: nextState.round })
+    events.push({ type: GAME_EVENT_TYPE.ROUND_ENDED, round: nextState.round })
+
+    for (const playerId in nextState.players) {
+      const player = nextState.players[playerId]!
+
+      for (const card of player.board) {
+        const isUnit = card.type === CARD_TYPE.UNIT
+
+        if (!isUnit) continue
+
+        const hasRegeneration = card.keywords?.includes(UNIT_KEYWORD.REGENERATION)
+
+        if (!hasRegeneration) continue
+        if (card.health >= card.maxHealth) continue
+
+        const delta = card.maxHealth - card.health
+
+        card.health = card.maxHealth
+
+        events.push({
+          type: GAME_EVENT_TYPE.HEAL_DEALT,
+          targetId: card.instanceId,
+          amount: delta,
+          isReputation: false,
+        })
+      }
+    }
 
     nextState.round += 1
 
@@ -37,7 +70,7 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
     nextState.players[prevInitiativeId]!.hasAttackToken = false
 
     events.push({
-      type: 'ROUND_STARTED',
+      type: GAME_EVENT_TYPE.ROUND_STARTED,
       initiativePlayerId: nextState.initiativePlayerId,
       round: nextState.round,
     })
@@ -50,12 +83,12 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
       player.maxEnergy = Math.min(10, player.maxEnergy + 1)
       player.energy = player.maxEnergy
 
-      events.push({ type: 'ENERGY_CHANGED', playerId, energy: player.energy })
+      events.push({ type: GAME_EVENT_TYPE.ENERGY_CHANGED, playerId, energy: player.energy })
 
       if (player.deck.length === 0) {
         const opponentId = Object.keys(nextState.players).find((id) => id !== playerId)!
         nextState.winnerPlayerId = opponentId
-        events.push({ type: 'GAME_OVER', winnerPlayerId: opponentId })
+        events.push({ type: GAME_EVENT_TYPE.GAME_OVER, winnerPlayerId: opponentId })
         break
       }
 
@@ -67,7 +100,11 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
         player.graveyard.push(drawnCard)
       }
 
-      events.push({ type: 'CARD_DRAWN', playerId, cardInstanceId: drawnCard.instanceId })
+      events.push({
+        type: GAME_EVENT_TYPE.CARD_DRAWN,
+        playerId,
+        cardInstanceId: drawnCard.instanceId,
+      })
     }
 
     nextState.consecutivePasses = 0

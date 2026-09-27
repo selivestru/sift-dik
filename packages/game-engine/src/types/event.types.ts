@@ -5,6 +5,7 @@ export const GAME_EVENT_TYPE = {
   CARD_DRAWN: 'CARD_DRAWN',
   UNIT_SPAWNED: 'UNIT_SPAWNED',
   DAMAGE_DEALT: 'DAMAGE_DEALT',
+  HEAL_DEALT: 'HEAL_DEALT',
   UNIT_DIED: 'UNIT_DIED',
   ROUND_STARTED: 'ROUND_STARTED',
   ROUND_ENDED: 'ROUND_ENDED',
@@ -38,6 +39,13 @@ export interface DamageDealtEvent {
   isReputation: boolean
 }
 
+export interface HealDealtEvent {
+  type: typeof GAME_EVENT_TYPE.HEAL_DEALT
+  targetId: string
+  amount: number
+  isReputation: boolean
+}
+
 export interface UnitDiedEvent {
   type: typeof GAME_EVENT_TYPE.UNIT_DIED
   unitInstanceId: string
@@ -64,6 +72,7 @@ export type GameEvent =
   | CardDrawnEvent
   | UnitSpawnedEvent
   | DamageDealtEvent
+  | HealDealtEvent
   | UnitDiedEvent
   | RoundStartedEvent
   | RoundEndedEvent

@@ -1,5 +1,5 @@
 import { MAX_UNITS_ON_BOARD_PER_PLAYER } from '../../constants/game'
-import type { GameEvent, GameState, PlayUnitAction } from '../../types'
+import { GAME_EVENT_TYPE, type GameEvent, type GameState, type PlayUnitAction } from '../../types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
 import type { ApplyActionResult } from '../apply-action'
 
@@ -51,7 +51,7 @@ export const playUnitAction = (state: GameState, action: PlayUnitAction): ApplyA
   playerState.energy -= card.cost
 
   events.push({
-    type: 'ENERGY_CHANGED',
+    type: GAME_EVENT_TYPE.ENERGY_CHANGED,
     energy: playerState.energy,
     playerId: action.playerId,
   })
@@ -60,7 +60,7 @@ export const playUnitAction = (state: GameState, action: PlayUnitAction): ApplyA
   playerState.board.push(card)
 
   events.push({
-    type: 'UNIT_SPAWNED',
+    type: GAME_EVENT_TYPE.UNIT_SPAWNED,
     playerId: action.playerId,
     unit: card,
   })
