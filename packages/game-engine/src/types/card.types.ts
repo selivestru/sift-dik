@@ -29,6 +29,7 @@ export const UNIT_KEYWORD = {
   LIFESTEAL: 'lifesteal',
   REGENERATION: 'regeneration',
   TOUGH: 'tough',
+  OVERWHELM: 'overwhelm',
 } as const
 
 export type UnitKeyword = (typeof UNIT_KEYWORD)[keyof typeof UNIT_KEYWORD]

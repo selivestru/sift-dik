@@ -5,6 +5,7 @@ import {
   type DeclareBlocksAction,
   type GameEvent,
   type GameState,
+  type PlayerState,
   type UnitCardInstance,
 } from '../../types'
 import type { ApplyActionResult } from '../apply-action'
@@ -83,24 +84,32 @@ export const declareBlocksAction = (
       const hasQuickAttack = attacker.keywords?.includes(UNIT_KEYWORD.QUICK_ATTACK)
 
       if (hasDoubleAttack) {
-        const damageToBlocker1 = calculateDamage(attacker.attack, blocker)
-        blocker.health -= damageToBlocker1
+        const { blockerDamage: strike1Damage, reputationDamage: rep1 } = calculateStrikeDamage(
+          attacker,
+          blocker,
+        )
+        blocker.health -= strike1Damage
 
         applyLifesteal(nextState, events, attacker)
 
         events.push({
           type: GAME_EVENT_TYPE.DAMAGE_DEALT,
           targetId: blocker.instanceId,
-          amount: damageToBlocker1,
+          amount: strike1Damage,
           isReputation: false,
         })
 
-        if (blocker.health > 0) {
+        applyReputationDamage(nextState, events, defenderPlayer, attackerPlayer.id, rep1)
+
+        if (blocker.health > 0 && nextState.winnerPlayerId === null) {
           const damageToAttacker = calculateDamage(blocker.attack, attacker)
-          const damageToBlocker2 = calculateDamage(attacker.attack, blocker)
+          const { blockerDamage: strike2Damage, reputationDamage: rep2 } = calculateStrikeDamage(
+            attacker,
+            blocker,
+          )
 
           attacker.health -= damageToAttacker
-          blocker.health -= damageToBlocker2
+          blocker.health -= strike2Damage
 
           applyLifesteal(nextState, events, blocker)
           applyLifesteal(nextState, events, attacker)
@@ -115,25 +124,35 @@ export const declareBlocksAction = (
             {
               type: GAME_EVENT_TYPE.DAMAGE_DEALT,
               targetId: blocker.instanceId,
-              amount: damageToBlocker2,
+              amount: strike2Damage,
               isReputation: false,
             },
           )
+
+          applyReputationDamage(nextState, events, defenderPlayer, attackerPlayer.id, rep2)
         }
       } else if (hasQuickAttack) {
-        const damageToBlocker = calculateDamage(attacker.attack, blocker)
-        blocker.health -= damageToBlocker
+        const { blockerDamage, reputationDamage } = calculateStrikeDamage(attacker, blocker)
+        blocker.health -= blockerDamage
 
         applyLifesteal(nextState, events, attacker)
 
         events.push({
           type: GAME_EVENT_TYPE.DAMAGE_DEALT,
           targetId: blocker.instanceId,
-          amount: damageToBlocker,
+          amount: blockerDamage,
           isReputation: false,
         })
 
-        if (blocker.health > 0) {
+        const isGameOver = applyReputationDamage(
+          nextState,
+          events,
+          defenderPlayer,
+          attackerPlayer.id,
+          reputationDamage,
+        )
+
+        if (blocker.health > 0 && !isGameOver) {
           const damageToAttacker = calculateDamage(blocker.attack, attacker)
           attacker.health -= damageToAttacker
 
@@ -148,10 +167,10 @@ export const declareBlocksAction = (
         }
       } else {
         const damageToAttacker = calculateDamage(blocker.attack, attacker)
-        const damageToBlocker = calculateDamage(attacker.attack, blocker)
+        const { blockerDamage, reputationDamage } = calculateStrikeDamage(attacker, blocker)
 
         attacker.health -= damageToAttacker
-        blocker.health -= damageToBlocker
+        blocker.health -= blockerDamage
 
         applyLifesteal(nextState, events, blocker)
         applyLifesteal(nextState, events, attacker)
@@ -166,9 +185,17 @@ export const declareBlocksAction = (
           {
             type: GAME_EVENT_TYPE.DAMAGE_DEALT,
             targetId: blocker.instanceId,
-            amount: damageToBlocker,
+            amount: blockerDamage,
             isReputation: false,
           },
+        )
+
+        applyReputationDamage(
+          nextState,
+          events,
+          defenderPlayer,
+          attackerPlayer.id,
+          reputationDamage,
         )
       }
 
@@ -185,24 +212,25 @@ export const declareBlocksAction = (
       } else {
         defenderPlayer.board.push(blocker)
       }
+
+      if (nextState.winnerPlayerId !== null) {
+        break
+      }
     } else {
       const strikeCount = hasDoubleAttack ? 2 : 1
 
       for (let i = 0; i < strikeCount; i++) {
-        defenderPlayer.reputation -= attacker.attack
-
-        events.push({
-          type: GAME_EVENT_TYPE.DAMAGE_DEALT,
-          targetId: defenderPlayer.id,
-          amount: attacker.attack,
-          isReputation: true,
-        })
-
         applyLifesteal(nextState, events, attacker)
 
-        if (defenderPlayer.reputation <= 0) {
-          nextState.winnerPlayerId = attackerPlayer.id
-          events.push({ type: GAME_EVENT_TYPE.GAME_OVER, winnerPlayerId: nextState.winnerPlayerId })
+        const isGameOver = applyReputationDamage(
+          nextState,
+          events,
+          defenderPlayer,
+          attackerPlayer.id,
+          attacker.attack,
+        )
+
+        if (isGameOver) {
           break
         }
       }
@@ -255,4 +283,67 @@ function calculateDamage(damage: number, target: UnitCardInstance): number {
   }
 
   return damage
+}
+
+interface StrikeDamageResult {
+  blockerDamage: number
+  reputationDamage: number
+}
+
+function calculateStrikeDamage(
+  attacker: UnitCardInstance,
+  blocker: UnitCardInstance,
+): StrikeDamageResult {
+  const hasOverwhelm = attacker.keywords?.includes(UNIT_KEYWORD.OVERWHELM)
+
+  if (hasOverwhelm) {
+    const neededToKillBlocker = blocker.keywords?.includes(UNIT_KEYWORD.TOUGH)
+      ? blocker.health + 1
+      : blocker.health
+
+    const excessDamage = Math.max(0, attacker.attack - neededToKillBlocker)
+    const damageToBlockerRaw = attacker.attack - excessDamage
+    const blockerDamage = calculateDamage(damageToBlockerRaw, blocker)
+
+    return {
+      blockerDamage,
+      reputationDamage: excessDamage,
+    }
+  }
+
+  return {
+    blockerDamage: calculateDamage(attacker.attack, blocker),
+    reputationDamage: 0,
+  }
+}
+
+function applyReputationDamage(
+  state: GameState,
+  events: GameEvent[],
+  targetPlayer: PlayerState,
+  winnerPlayerId: string,
+  amount: number,
+): boolean {
+  if (amount <= 0) return false
+
+  targetPlayer.reputation -= amount
+
+  events.push({
+    type: GAME_EVENT_TYPE.DAMAGE_DEALT,
+    targetId: targetPlayer.id,
+    amount,
+    isReputation: true,
+  })
+
+  if (targetPlayer.reputation <= 0) {
+    state.winnerPlayerId = winnerPlayerId
+    events.push({
+      type: GAME_EVENT_TYPE.GAME_OVER,
+      winnerPlayerId,
+    })
+
+    return true
+  }
+
+  return false
 }
