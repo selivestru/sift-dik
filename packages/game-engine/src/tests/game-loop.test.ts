@@ -88,6 +88,7 @@ describe('Game Engine - Layer 0', () => {
         type: GAME_EVENT_TYPE.ENERGY_CHANGED,
         energy: 0,
         playerId: activePlayerId,
+        isReserved: false,
       },
       {
         type: GAME_EVENT_TYPE.UNIT_SPAWNED,
@@ -171,6 +172,20 @@ describe('Game Engine - Layer 0', () => {
     expect(secondPassResult.state.round).toBe(2)
     expect(secondPassResult.state.initiativePlayerId).toBe(p1.id)
     expect(secondPassResult.state.turnPlayerId).toBe(p1.id)
+
+    expect(secondPassResult.events).toContainEqual({
+      type: GAME_EVENT_TYPE.ENERGY_CHANGED,
+      playerId: p1.id,
+      energy: 2,
+      isReserved: false,
+    })
+
+    expect(secondPassResult.events).toContainEqual({
+      type: GAME_EVENT_TYPE.ENERGY_CHANGED,
+      playerId: p1.id,
+      energy: 1,
+      isReserved: true,
+    })
 
     for (const player of Object.values(secondPassResult.state.players)) {
       expect(player.maxEnergy).toBe(2)

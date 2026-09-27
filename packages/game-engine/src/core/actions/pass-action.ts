@@ -79,11 +79,24 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
       const player = nextState.players[playerId]!
       const leftover = player.energy
 
-      player.reservedEnergy = Math.min(3, player.reservedEnergy + leftover)
       player.maxEnergy = Math.min(10, player.maxEnergy + 1)
       player.energy = player.maxEnergy
+      player.reservedEnergy = Math.min(3, player.reservedEnergy + leftover)
 
-      events.push({ type: GAME_EVENT_TYPE.ENERGY_CHANGED, playerId, energy: player.energy })
+      events.push(
+        {
+          type: GAME_EVENT_TYPE.ENERGY_CHANGED,
+          playerId,
+          energy: player.energy,
+          isReserved: false,
+        },
+        {
+          type: GAME_EVENT_TYPE.ENERGY_CHANGED,
+          playerId,
+          energy: player.reservedEnergy,
+          isReserved: true,
+        },
+      )
 
       if (player.deck.length === 0) {
         const opponentId = Object.keys(nextState.players).find((id) => id !== playerId)!

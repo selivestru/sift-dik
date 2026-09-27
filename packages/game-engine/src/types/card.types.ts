@@ -32,6 +32,7 @@ export const UNIT_KEYWORD = {
   OVERWHELM: 'overwhelm',
   CANNOT_ATTACK: 'cannot_attack',
   CANNOT_BLOCK: 'cannot_block',
+  IMPULSE: 'impulse',
 } as const
 
 export type UnitKeyword = (typeof UNIT_KEYWORD)[keyof typeof UNIT_KEYWORD]

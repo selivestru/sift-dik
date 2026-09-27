@@ -1,5 +1,11 @@
 import { MAX_UNITS_ON_BOARD_PER_PLAYER } from '../../constants/game'
-import { GAME_EVENT_TYPE, type GameEvent, type GameState, type PlayUnitAction } from '../../types'
+import {
+  GAME_EVENT_TYPE,
+  UNIT_KEYWORD,
+  type GameEvent,
+  type GameState,
+  type PlayUnitAction,
+} from '../../types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
 import type { ApplyActionResult } from '../apply-action'
 
@@ -54,6 +60,7 @@ export const playUnitAction = (state: GameState, action: PlayUnitAction): ApplyA
     type: GAME_EVENT_TYPE.ENERGY_CHANGED,
     energy: playerState.energy,
     playerId: action.playerId,
+    isReserved: false,
   })
 
   playerState.hand = playerState.hand.filter((card) => card.instanceId !== action.cardInstanceId)
@@ -64,6 +71,17 @@ export const playUnitAction = (state: GameState, action: PlayUnitAction): ApplyA
     playerId: action.playerId,
     unit: card,
   })
+
+  if (card.keywords?.includes(UNIT_KEYWORD.IMPULSE) && playerState.reservedEnergy < 3) {
+    playerState.reservedEnergy = Math.min(3, playerState.reservedEnergy + 1)
+
+    events.push({
+      type: GAME_EVENT_TYPE.ENERGY_CHANGED,
+      playerId: action.playerId,
+      energy: playerState.reservedEnergy,
+      isReserved: true,
+    })
+  }
 
   nextState.turnPlayerId = getNextPlayerId(nextState)
   nextState.consecutivePasses = 0

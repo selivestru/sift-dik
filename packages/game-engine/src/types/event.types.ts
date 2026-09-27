@@ -18,6 +18,7 @@ export interface EnergyChangedEvent {
   type: typeof GAME_EVENT_TYPE.ENERGY_CHANGED
   playerId: string
   energy: number
+  isReserved: boolean
 }
 
 export interface CardDrawnEvent {
