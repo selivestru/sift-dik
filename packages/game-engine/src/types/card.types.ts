@@ -39,6 +39,7 @@ export const KEYWORD = {
   FURY: 'fury',
   RAM: 'ram',
   FLEETING: 'fleeting',
+  EPHEMERAL: 'ephemeral',
 } as const
 
 export type Keyword = (typeof KEYWORD)[keyof typeof KEYWORD]

@@ -231,34 +231,34 @@ export const declareBlocksAction = (
         )
       }
 
-      if (
-        attacker.health > 0 &&
-        blocker.health <= 0 &&
-        attacker.keywords?.includes(KEYWORD.FURY)
-      ) {
+      if (attacker.health > 0 && blocker.health <= 0 && attacker.keywords?.includes(KEYWORD.FURY)) {
         attacker.attack += 1
         attacker.health += 1
         attacker.maxHealth += 1
       }
 
-      if (
-        blocker.health > 0 &&
-        attacker.health <= 0 &&
-        blocker.keywords?.includes(KEYWORD.FURY)
-      ) {
+      if (blocker.health > 0 && attacker.health <= 0 && blocker.keywords?.includes(KEYWORD.FURY)) {
         blocker.attack += 1
         blocker.health += 1
         blocker.maxHealth += 1
       }
 
-      if (attacker.health <= 0) {
+      const attackerStrikes = attacker.attack > 0
+      const blockerStrikes = blocker.attack > 0
+
+      const attackerDies =
+        attacker.health <= 0 || (attackerStrikes && attacker.keywords?.includes(KEYWORD.EPHEMERAL))
+      const blockerDies =
+        blocker.health <= 0 || (blockerStrikes && blocker.keywords?.includes(KEYWORD.EPHEMERAL))
+
+      if (attackerDies) {
         attackerPlayer.graveyard.push(attacker)
         events.push({ type: GAME_EVENT_TYPE.UNIT_DIED, unitInstanceId: attacker.instanceId })
       } else {
         attackerPlayer.board.push(attacker)
       }
 
-      if (blocker.health <= 0) {
+      if (blockerDies) {
         defenderPlayer.graveyard.push(blocker)
         events.push({ type: GAME_EVENT_TYPE.UNIT_DIED, unitInstanceId: blocker.instanceId })
       } else {
@@ -290,7 +290,16 @@ export const declareBlocksAction = (
         }
       }
 
-      attackerPlayer.board.push(attacker)
+      const attackerStrikes = attacker.attack > 0
+      const attackerDies =
+        attacker.health <= 0 || (attackerStrikes && attacker.keywords?.includes(KEYWORD.EPHEMERAL))
+
+      if (attackerDies) {
+        attackerPlayer.graveyard.push(attacker)
+        events.push({ type: GAME_EVENT_TYPE.UNIT_DIED, unitInstanceId: attacker.instanceId })
+      } else {
+        attackerPlayer.board.push(attacker)
+      }
 
       if (nextState.winnerPlayerId !== null) {
         break

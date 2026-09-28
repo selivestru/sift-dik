@@ -49,9 +49,7 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
       const player = nextState.players[playerId]!
 
       // 1. Discard fleeting cards from hand
-      const fleetingCards = player.hand.filter((card) =>
-        card.keywords?.includes(KEYWORD.FLEETING),
-      )
+      const fleetingCards = player.hand.filter((card) => card.keywords?.includes(KEYWORD.FLEETING))
 
       if (fleetingCards.length > 0) {
         const fleetingIds = new Set(fleetingCards.map((c) => c.instanceId))
@@ -67,7 +65,23 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
         }
       }
 
-      // 2. Unit round cleanup (buffs, keywords, regeneration)
+      const ephemeralUnits = player.board.filter((card) =>
+        card.keywords?.includes(KEYWORD.EPHEMERAL),
+      )
+
+      if (ephemeralUnits.length > 0) {
+        const ephemeralIds = new Set(ephemeralUnits.map((c) => c.instanceId))
+        player.board = player.board.filter((c) => !ephemeralIds.has(c.instanceId))
+        player.graveyard.push(...ephemeralUnits)
+
+        for (const card of ephemeralUnits) {
+          events.push({
+            type: GAME_EVENT_TYPE.UNIT_DIED,
+            unitInstanceId: card.instanceId,
+          })
+        }
+      }
+
       for (const card of player.board) {
         if (card.type !== CARD_TYPE.UNIT) continue
 
