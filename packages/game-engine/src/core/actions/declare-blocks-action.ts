@@ -373,6 +373,10 @@ function applyLifesteal(state: GameState, events: GameEvent[], striker: UnitCard
 }
 
 function calculateDamage(damage: number, target: UnitCardInstance): number {
+  if (target.keywords?.includes(KEYWORD.INVULNERABLE)) {
+    return 0
+  }
+
   const hasTough = target.keywords?.includes(KEYWORD.TOUGH)
   if (hasTough) {
     return Math.max(0, damage - 1)

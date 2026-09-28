@@ -40,6 +40,7 @@ export const KEYWORD = {
   RAM: 'ram',
   FLEETING: 'fleeting',
   EPHEMERAL: 'ephemeral',
+  INVULNERABLE: 'invulnerable',
 } as const
 
 export type Keyword = (typeof KEYWORD)[keyof typeof KEYWORD]
