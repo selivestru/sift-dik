@@ -102,6 +102,10 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
           card.tempKeywords = []
         }
 
+        if (card.keywords?.includes(KEYWORD.BARRIER)) {
+          card.keywords = card.keywords.filter((k) => k !== KEYWORD.BARRIER)
+        }
+
         const hasRegeneration = card.keywords?.includes(KEYWORD.REGENERATION)
 
         if (!hasRegeneration) continue

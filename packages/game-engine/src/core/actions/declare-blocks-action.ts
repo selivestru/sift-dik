@@ -384,6 +384,11 @@ function calculateDamage(damage: number, target: UnitCardInstance): number {
     return 0
   }
 
+  if (target.keywords?.includes(KEYWORD.BARRIER) && damage > 0) {
+    target.keywords = target.keywords.filter((k) => k !== KEYWORD.BARRIER)
+    return 0
+  }
+
   const hasTough = target.keywords?.includes(KEYWORD.TOUGH)
   if (hasTough) {
     return Math.max(0, damage - 1)
