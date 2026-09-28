@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
 import { applyAction, createGame } from '../core'
-import { GAME_ACTION_TYPE, UNIT_KEYWORD, type UnitCard } from '../types'
+import { GAME_ACTION_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
 const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
@@ -30,7 +30,7 @@ describe('Keyword: Fury', () => {
       health: 3,
       baseHealth: 3,
       maxHealth: 3,
-      keywords: [UNIT_KEYWORD.FURY],
+      keywords: [KEYWORD.FURY],
     })
 
     // Weak Blocker: 1/2 (will deal 1 damage to attacker and die)

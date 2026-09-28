@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
 import { applyAction, createGame } from '../core'
-import { GAME_ACTION_TYPE, UNIT_KEYWORD, type UnitCard } from '../types'
+import { GAME_ACTION_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
 const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
@@ -38,7 +38,7 @@ describe('Keyword: Cannot Block', () => {
       health: 2,
       baseHealth: 2,
       maxHealth: 2,
-      keywords: [UNIT_KEYWORD.CANNOT_BLOCK],
+      keywords: [KEYWORD.CANNOT_BLOCK],
     })
 
     const state = createGame(

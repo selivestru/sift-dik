@@ -17,42 +17,41 @@ const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
   baseCost: 1,
   cost: 1,
   type: 'unit',
-  baseAttack: 3,
-  attack: 3,
-  baseHealth: 3,
-  health: 3,
-  maxHealth: 3,
+  baseAttack: 2,
+  attack: 2,
+  baseHealth: 2,
+  health: 2,
+  maxHealth: 2,
   ...overrides,
 })
 
-describe('Keyword: Tough', () => {
-  test('unit with tough takes 1 less damage in combat', () => {
-    const normalAttacker = createUnit({
-      id: 'attacker-unit',
-      attack: 3,
-      baseAttack: 3,
-      health: 3,
-      baseHealth: 3,
-      maxHealth: 3,
-    })
-
-    const toughBlocker = createUnit({
-      id: 'tough-blocker',
+describe('Keyword: Ram', () => {
+  test('unit with ram deals 1 damage to opponent reputation when blocked by a surviving blocker', () => {
+    // Ram Attacker: 2/2 with Ram
+    const ramAttacker = createUnit({
+      id: 'ram-attacker',
       attack: 2,
       baseAttack: 2,
-      health: 3,
-      baseHealth: 3,
-      maxHealth: 3,
-      keywords: [KEYWORD.TOUGH],
+      health: 2,
+      baseHealth: 2,
+      maxHealth: 2,
+      keywords: [KEYWORD.RAM],
+    })
+
+    // Big Blocker: 1/5 (will easily survive 2 damage)
+    const bigBlocker = createUnit({
+      id: 'big-blocker',
+      attack: 1,
+      baseAttack: 1,
+      health: 5,
+      baseHealth: 5,
+      maxHealth: 5,
     })
 
     const state = createGame(
       [
-        { id: 'p1', cards: [toughBlocker, toughBlocker, toughBlocker, toughBlocker, toughBlocker] },
-        {
-          id: 'p2',
-          cards: [normalAttacker, normalAttacker, normalAttacker, normalAttacker, normalAttacker],
-        },
+        { id: 'p1', cards: [bigBlocker, createUnit(), createUnit(), createUnit(), createUnit()] },
+        { id: 'p2', cards: [ramAttacker, createUnit(), createUnit(), createUnit(), createUnit()] },
       ],
       { seed: 42 }, // p2 has initiative
     )
@@ -64,16 +63,16 @@ describe('Keyword: Tough', () => {
     const stateAfterP2 = applyAction(state, {
       type: GAME_ACTION_TYPE.PLAY_UNIT,
       playerId: attackerId,
-      cardInstanceId: state.players[attackerId]!.hand[0]!.instanceId,
+      cardInstanceId: state.players[attackerId]!.hand.find((c) => c.id === 'ram-attacker')!.instanceId,
     }).state
 
     const stateAfterP1 = applyAction(stateAfterP2, {
       type: GAME_ACTION_TYPE.PLAY_UNIT,
       playerId: defenderId,
-      cardInstanceId: stateAfterP2.players[defenderId]!.hand[0]!.instanceId,
+      cardInstanceId: stateAfterP2.players[defenderId]!.hand.find((c) => c.id === 'big-blocker')!.instanceId,
     }).state
 
-    // 2. P2 attacks, P1 blocks
+    // 2. P2 attacks with Ram unit, P1 blocks with big blocker
     const attackingUnitId = stateAfterP1.players[attackerId]!.board[0]!.instanceId
     const defendingUnitId = stateAfterP1.players[defenderId]!.board[0]!.instanceId
 
@@ -89,18 +88,21 @@ describe('Keyword: Tough', () => {
       blocks: [{ attackerInstanceId: attackingUnitId, defenderInstanceId: defendingUnitId }],
     })
 
-    // Attacker (without Tough) took full 2 damage -> 3 - 2 = 1 HP
+    // Blocker took 2 damage -> 5 - 2 = 3 HP (survived)
+    expect(combatResult.state.players[defenderId]!.board[0]!.health).toBe(3)
+
+    // Attacker took 1 damage -> 2 - 1 = 1 HP (survived)
     expect(combatResult.state.players[attackerId]!.board[0]!.health).toBe(1)
 
-    // Blocker (with Tough) took 3 - 1 = 2 damage -> 3 - 2 = 1 HP (would have died at 0 HP without Tough!)
-    expect(combatResult.state.players[defenderId]!.board[0]!.health).toBe(1)
+    // Despite being blocked, Ram dealt 1 damage to defender reputation: 20 - 1 = 19
+    expect(combatResult.state.players[defenderId]!.reputation).toBe(19)
 
-    // Damage event to Tough blocker reflects reduced damage (amount: 2)
+    // Event emitted for reputation damage
     expect(combatResult.events).toContainEqual({
       type: GAME_EVENT_TYPE.DAMAGE_DEALT,
-      targetId: defendingUnitId,
-      amount: 2,
-      isReputation: false,
+      targetId: defenderId,
+      amount: 1,
+      isReputation: true,
     })
   })
 })

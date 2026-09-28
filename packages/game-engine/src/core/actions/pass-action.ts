@@ -2,7 +2,7 @@ import { MAX_CARDS_IN_HAND } from '../../constants/game'
 import {
   CARD_TYPE,
   GAME_EVENT_TYPE,
-  UNIT_KEYWORD,
+  KEYWORD,
   type GameEvent,
   type GameState,
   type PassAction,
@@ -48,6 +48,26 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
     for (const playerId in nextState.players) {
       const player = nextState.players[playerId]!
 
+      // 1. Discard fleeting cards from hand
+      const fleetingCards = player.hand.filter((card) =>
+        card.keywords?.includes(KEYWORD.FLEETING),
+      )
+
+      if (fleetingCards.length > 0) {
+        const fleetingIds = new Set(fleetingCards.map((c) => c.instanceId))
+        player.hand = player.hand.filter((c) => !fleetingIds.has(c.instanceId))
+        player.graveyard.push(...fleetingCards)
+
+        for (const card of fleetingCards) {
+          events.push({
+            type: GAME_EVENT_TYPE.CARD_DISCARDED,
+            playerId: player.id,
+            cardInstanceId: card.instanceId,
+          })
+        }
+      }
+
+      // 2. Unit round cleanup (buffs, keywords, regeneration)
       for (const card of player.board) {
         if (card.type !== CARD_TYPE.UNIT) continue
 
@@ -68,7 +88,7 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
           card.tempKeywords = []
         }
 
-        const hasRegeneration = card.keywords?.includes(UNIT_KEYWORD.REGENERATION)
+        const hasRegeneration = card.keywords?.includes(KEYWORD.REGENERATION)
 
         if (!hasRegeneration) continue
         if (card.health >= card.maxHealth) continue

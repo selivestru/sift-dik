@@ -1,4 +1,4 @@
-import { CARD_FACTION, CARD_TYPE, UNIT_KEYWORD, type UnitCard } from '../../types'
+import { CARD_FACTION, CARD_TYPE, KEYWORD, type UnitCard } from '../../types'
 import { ABILITY } from '../../types/abilities.types'
 
 export const tremoloCard: UnitCard = {
@@ -15,6 +15,6 @@ export const tremoloCard: UnitCard = {
   baseHealth: 3,
   health: 3,
   maxHealth: 3,
-  keywords: [UNIT_KEYWORD.QUICK_ATTACK],
+  keywords: [KEYWORD.QUICK_ATTACK],
   abilities: [ABILITY.TREMOLO_SUPPORT, ABILITY.TREMOLO_REPUTATION_STRIKE],
 }

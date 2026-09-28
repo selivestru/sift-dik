@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest'
 import { applyAction, createGame } from '../core'
 import {
   GAME_ACTION_TYPE,
-  UNIT_KEYWORD,
+  KEYWORD,
   type UnitCard,
 } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
@@ -28,7 +28,7 @@ describe('Keyword: Elusive', () => {
   test('non-elusive blocker cannot block elusive attacker, but elusive blocker can', () => {
     const elusiveAttacker = createUnit({
       id: 'elusive-attacker',
-      keywords: [UNIT_KEYWORD.ELUSIVE],
+      keywords: [KEYWORD.ELUSIVE],
     })
 
     const normalBlocker = createUnit({
@@ -37,7 +37,7 @@ describe('Keyword: Elusive', () => {
 
     const elusiveBlocker = createUnit({
       id: 'elusive-blocker',
-      keywords: [UNIT_KEYWORD.ELUSIVE],
+      keywords: [KEYWORD.ELUSIVE],
     })
 
     const state = createGame(

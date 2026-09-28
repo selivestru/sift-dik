@@ -1,7 +1,7 @@
 import { MAX_REPUTATION } from '../../constants/game'
 import {
   GAME_EVENT_TYPE,
-  UNIT_KEYWORD,
+  KEYWORD,
   type DeclareBlocksAction,
   type GameEvent,
   type GameState,
@@ -66,7 +66,7 @@ export const declareBlocksAction = (
   const blockerUnits = defenderState.board.filter((u) => blockerIdSet.has(u.instanceId))
 
   const hasCannotBlockUnit = blockerUnits.some((unit) =>
-    unit.keywords?.includes(UNIT_KEYWORD.CANNOT_BLOCK),
+    unit.keywords?.includes(KEYWORD.CANNOT_BLOCK),
   )
 
   if (hasCannotBlockUnit) {
@@ -83,8 +83,8 @@ export const declareBlocksAction = (
     )!
     const blockerUnit = blockerUnits.find((u) => u.instanceId === block.defenderInstanceId)!
 
-    const attackerIsElusive = slot.attacker.keywords?.includes(UNIT_KEYWORD.ELUSIVE)
-    const blockerIsElusive = blockerUnit.keywords?.includes(UNIT_KEYWORD.ELUSIVE)
+    const attackerIsElusive = slot.attacker.keywords?.includes(KEYWORD.ELUSIVE)
+    const blockerIsElusive = blockerUnit.keywords?.includes(KEYWORD.ELUSIVE)
 
     if (attackerIsElusive && !blockerIsElusive) {
       throw new Error(
@@ -101,10 +101,10 @@ export const declareBlocksAction = (
   const events: GameEvent[] = []
 
   for (const { attacker, blocker } of nextState.combat.slots) {
-    const hasDoubleAttack = attacker.keywords?.includes(UNIT_KEYWORD.DOUBLE_ATTACK)
+    const hasDoubleAttack = attacker.keywords?.includes(KEYWORD.DOUBLE_ATTACK)
 
     if (blocker) {
-      const hasQuickAttack = attacker.keywords?.includes(UNIT_KEYWORD.QUICK_ATTACK)
+      const hasQuickAttack = attacker.keywords?.includes(KEYWORD.QUICK_ATTACK)
 
       if (hasDoubleAttack) {
         const { blockerDamage: strike1Damage, reputationDamage: rep1 } = calculateStrikeDamage(
@@ -234,7 +234,7 @@ export const declareBlocksAction = (
       if (
         attacker.health > 0 &&
         blocker.health <= 0 &&
-        attacker.keywords?.includes(UNIT_KEYWORD.FURY)
+        attacker.keywords?.includes(KEYWORD.FURY)
       ) {
         attacker.attack += 1
         attacker.health += 1
@@ -244,7 +244,7 @@ export const declareBlocksAction = (
       if (
         blocker.health > 0 &&
         attacker.health <= 0 &&
-        blocker.keywords?.includes(UNIT_KEYWORD.FURY)
+        blocker.keywords?.includes(KEYWORD.FURY)
       ) {
         blocker.attack += 1
         blocker.health += 1
@@ -270,6 +270,8 @@ export const declareBlocksAction = (
       }
     } else {
       const strikeCount = hasDoubleAttack ? 2 : 1
+      const ramBonus = attacker.keywords?.includes(KEYWORD.RAM) ? 1 : 0
+      const totalFaceDamage = attacker.attack + ramBonus
 
       for (let i = 0; i < strikeCount; i++) {
         applyLifesteal(nextState, events, attacker)
@@ -280,7 +282,7 @@ export const declareBlocksAction = (
           attacker,
           defenderPlayer,
           attackerPlayer.id,
-          attacker.attack,
+          totalFaceDamage,
         )
 
         if (isGameOver) {
@@ -309,7 +311,7 @@ export const declareBlocksAction = (
 }
 
 function applyLifesteal(state: GameState, events: GameEvent[], striker: UnitCardInstance) {
-  const hasLifeSteal = striker.keywords?.includes(UNIT_KEYWORD.LIFESTEAL)
+  const hasLifeSteal = striker.keywords?.includes(KEYWORD.LIFESTEAL)
 
   if (hasLifeSteal) {
     const player = state.players[striker.ownerId]!
@@ -329,7 +331,7 @@ function applyLifesteal(state: GameState, events: GameEvent[], striker: UnitCard
 }
 
 function calculateDamage(damage: number, target: UnitCardInstance): number {
-  const hasTough = target.keywords?.includes(UNIT_KEYWORD.TOUGH)
+  const hasTough = target.keywords?.includes(KEYWORD.TOUGH)
 
   if (hasTough) {
     return Math.max(0, damage - 1)
@@ -347,10 +349,11 @@ function calculateStrikeDamage(
   attacker: UnitCardInstance,
   blocker: UnitCardInstance,
 ): StrikeDamageResult {
-  const hasOverwhelm = attacker.keywords?.includes(UNIT_KEYWORD.OVERWHELM)
+  const hasOverwhelm = attacker.keywords?.includes(KEYWORD.OVERWHELM)
+  const ramBonus = attacker.keywords?.includes(KEYWORD.RAM) ? 1 : 0
 
   if (hasOverwhelm) {
-    const neededToKillBlocker = blocker.keywords?.includes(UNIT_KEYWORD.TOUGH)
+    const neededToKillBlocker = blocker.keywords?.includes(KEYWORD.TOUGH)
       ? blocker.health + 1
       : blocker.health
 
@@ -360,13 +363,13 @@ function calculateStrikeDamage(
 
     return {
       blockerDamage,
-      reputationDamage: excessDamage,
+      reputationDamage: excessDamage + ramBonus,
     }
   }
 
   return {
     blockerDamage: calculateDamage(attacker.attack, blocker),
-    reputationDamage: 0,
+    reputationDamage: ramBonus,
   }
 }
 

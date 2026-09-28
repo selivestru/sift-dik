@@ -25,7 +25,7 @@ export interface BaseCard {
   cost: number
 }
 
-export const UNIT_KEYWORD = {
+export const KEYWORD = {
   QUICK_ATTACK: 'quick_attack',
   DOUBLE_ATTACK: 'double_attack',
   LIFESTEAL: 'lifesteal',
@@ -37,9 +37,11 @@ export const UNIT_KEYWORD = {
   IMPULSE: 'impulse',
   ELUSIVE: 'elusive',
   FURY: 'fury',
+  RAM: 'ram',
+  FLEETING: 'fleeting',
 } as const
 
-export type UnitKeyword = (typeof UNIT_KEYWORD)[keyof typeof UNIT_KEYWORD]
+export type Keyword = (typeof KEYWORD)[keyof typeof KEYWORD]
 
 export interface UnitCard extends BaseCard {
   id: string
@@ -51,8 +53,8 @@ export interface UnitCard extends BaseCard {
   attack: number
   tempAttack?: number
   tempHealth?: number
-  keywords?: UnitKeyword[]
-  tempKeywords?: UnitKeyword[]
+  keywords?: Keyword[]
+  tempKeywords?: Keyword[]
   abilities?: AbilityType[]
 }
 
@@ -73,6 +75,7 @@ export interface SpellCard extends BaseCard {
   id: SpellType
   type: typeof CARD_TYPE.SPELL
   speed: SpellSpeed
+  keywords?: Keyword[]
 }
 
 export interface SpellCardInstance extends SpellCard {

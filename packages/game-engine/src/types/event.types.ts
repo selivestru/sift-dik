@@ -3,6 +3,7 @@ import type { UnitCardInstance } from './card.types'
 export const GAME_EVENT_TYPE = {
   ENERGY_CHANGED: 'ENERGY_CHANGED',
   CARD_DRAWN: 'CARD_DRAWN',
+  CARD_DISCARDED: 'CARD_DISCARDED',
   UNIT_SPAWNED: 'UNIT_SPAWNED',
   DAMAGE_DEALT: 'DAMAGE_DEALT',
   HEAL_DEALT: 'HEAL_DEALT',
@@ -23,6 +24,12 @@ export interface EnergyChangedEvent {
 
 export interface CardDrawnEvent {
   type: typeof GAME_EVENT_TYPE.CARD_DRAWN
+  playerId: string
+  cardInstanceId: string
+}
+
+export interface CardDiscardedEvent {
+  type: typeof GAME_EVENT_TYPE.CARD_DISCARDED
   playerId: string
   cardInstanceId: string
 }
@@ -71,6 +78,7 @@ export interface GameOverEvent {
 export type GameEvent =
   | EnergyChangedEvent
   | CardDrawnEvent
+  | CardDiscardedEvent
   | UnitSpawnedEvent
   | DamageDealtEvent
   | HealDealtEvent

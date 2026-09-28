@@ -4,7 +4,7 @@ import { preemptiveStrike } from '../catalog/spells/preemptive-strike'
 import { applyAction, createGame } from '../core'
 import {
   GAME_ACTION_TYPE,
-  UNIT_KEYWORD,
+  KEYWORD,
   type UnitCard,
 } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
@@ -106,8 +106,8 @@ describe('Spell: Preemptive Strike', () => {
     expect(buffedUnit.health).toBe(4)
     expect(buffedUnit.maxHealth).toBe(4)
     expect(buffedUnit.attack).toBe(2)
-    expect(buffedUnit.keywords).toContain(UNIT_KEYWORD.QUICK_ATTACK)
-    expect(buffedUnit.tempKeywords).toContain(UNIT_KEYWORD.QUICK_ATTACK)
+    expect(buffedUnit.keywords).toContain(KEYWORD.QUICK_ATTACK)
+    expect(buffedUnit.tempKeywords).toContain(KEYWORD.QUICK_ATTACK)
 
     // Step 4: Both players pass to finish Round 1 -> temporary buff and keyword expire
     const passToRound2_1 = applyAction(passResult.state, {
@@ -124,7 +124,7 @@ describe('Spell: Preemptive Strike', () => {
     const revertedUnit = passToRound2_2.players[p2Id]!.board.find((u) => u.id === 'target-unit')!
     expect(revertedUnit.health).toBe(2)
     expect(revertedUnit.maxHealth).toBe(2)
-    expect(revertedUnit.keywords).not.toContain(UNIT_KEYWORD.QUICK_ATTACK)
+    expect(revertedUnit.keywords).not.toContain(KEYWORD.QUICK_ATTACK)
     expect(revertedUnit.tempKeywords).toHaveLength(0)
   })
 })

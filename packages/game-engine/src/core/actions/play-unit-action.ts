@@ -1,7 +1,7 @@
 import { MAX_UNITS_ON_BOARD_PER_PLAYER } from '../../constants/game'
 import {
   GAME_EVENT_TYPE,
-  UNIT_KEYWORD,
+  KEYWORD,
   type GameEvent,
   type GameState,
   type PlayUnitAction,
@@ -72,7 +72,7 @@ export const playUnitAction = (state: GameState, action: PlayUnitAction): ApplyA
     unit: card,
   })
 
-  if (card.keywords?.includes(UNIT_KEYWORD.IMPULSE) && playerState.reservedEnergy < 3) {
+  if (card.keywords?.includes(KEYWORD.IMPULSE) && playerState.reservedEnergy < 3) {
     playerState.reservedEnergy = Math.min(3, playerState.reservedEnergy + 1)
 
     events.push({

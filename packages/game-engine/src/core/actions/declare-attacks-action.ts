@@ -1,5 +1,5 @@
 import {
-  UNIT_KEYWORD,
+  KEYWORD,
   type DeclareAttacksAction,
   type GameEvent,
   type GameState,
@@ -58,7 +58,7 @@ export const declareAttacksAction = (
 
   const hasCannotAttackUnit = action.attackers.some((id) => {
     const unit = playerState.board.find((u) => u.instanceId === id)
-    return unit?.keywords?.includes(UNIT_KEYWORD.CANNOT_ATTACK)
+    return unit?.keywords?.includes(KEYWORD.CANNOT_ATTACK)
   })
 
   if (hasCannotAttackUnit) {

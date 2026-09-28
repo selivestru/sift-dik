@@ -4,7 +4,7 @@ import { applyAction, createGame } from '../core'
 import {
   GAME_ACTION_TYPE,
   GAME_EVENT_TYPE,
-  UNIT_KEYWORD,
+  KEYWORD,
   type UnitCard,
 } from '../types'
 
@@ -30,7 +30,7 @@ describe('Keyword: Impulse', () => {
       id: 'impulse-unit',
       baseCost: 1,
       cost: 1,
-      keywords: [UNIT_KEYWORD.IMPULSE],
+      keywords: [KEYWORD.IMPULSE],
     })
 
     const dummyCard = createUnit({ id: 'dummy-card' })

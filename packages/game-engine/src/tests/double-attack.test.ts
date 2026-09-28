@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
 import { applyAction, createGame } from '../core'
-import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, UNIT_KEYWORD, type UnitCard } from '../types'
+import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
 const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
@@ -28,7 +28,7 @@ describe('Keyword: Double Attack', () => {
       baseAttack: 2,
       health: 2,
       baseHealth: 2,
-      keywords: [UNIT_KEYWORD.DOUBLE_ATTACK],
+      keywords: [KEYWORD.DOUBLE_ATTACK],
     })
 
     const beefyBlocker = createUnit({
