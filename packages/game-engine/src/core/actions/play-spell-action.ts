@@ -5,6 +5,7 @@ import {
   type GameEvent,
   type GameState,
   type PlaySpellAction,
+  type PlayerState,
   type SpellCardInstance,
 } from '../../types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
@@ -13,22 +14,36 @@ import type { ApplyActionResult } from '../apply-action'
 export const playSpellAction = (state: GameState, action: PlaySpellAction): ApplyActionResult => {
   const nextState: GameState = structuredClone(state)
 
-  if (nextState.winnerPlayerId !== null) {
-    throw new Error(`Game has already ended. Winner: ${nextState.winnerPlayerId}`)
+  const spellCard = validatePlaySpellAction(nextState, action)
+  const events: GameEvent[] = []
+
+  spendSpellCost(nextState.players[action.playerId]!, events, action.playerId, spellCard.cost)
+  deploySpellToStack(nextState, action, spellCard)
+
+  nextState.turnPlayerId = getNextPlayerId(nextState)
+  nextState.consecutivePasses = 0
+
+  return {
+    state: nextState,
+    events,
+  }
+}
+
+function validatePlaySpellAction(state: GameState, action: PlaySpellAction): SpellCardInstance {
+  if (state.winnerPlayerId !== null) {
+    throw new Error(`Game has already ended. Winner: ${state.winnerPlayerId}`)
   }
 
-  if (nextState.turnPlayerId !== action.playerId) {
+  if (state.turnPlayerId !== action.playerId) {
     throw new Error(`It is not player "${action.playerId}" turn to act`)
   }
 
-  const playerState = nextState.players[action.playerId]
-
+  const playerState = state.players[action.playerId]
   if (!playerState) {
     throw new Error(`Player with ID "${action.playerId}" not found`)
   }
 
   const card = playerState.hand.find((c) => c.instanceId === action.cardInstanceId)
-
   if (!card) {
     throw new Error(`Card with instance ID "${action.cardInstanceId}" not found in player hand`)
   }
@@ -39,12 +54,11 @@ export const playSpellAction = (state: GameState, action: PlaySpellAction): Appl
 
   const spellCard = card as SpellCardInstance
 
-  if (spellCard.speed === SPELL_SPEED.SLOW && nextState.combat !== null) {
+  if (spellCard.speed === SPELL_SPEED.SLOW && state.combat !== null) {
     throw new Error('Cannot play slow spell while combat is in progress')
   }
 
   const availableEnergy = playerState.energy + playerState.reservedEnergy
-
   if (availableEnergy < spellCard.cost) {
     throw new Error(
       `Not enough energy to play spell (required: ${spellCard.cost}, available: ${availableEnergy})`,
@@ -52,9 +66,9 @@ export const playSpellAction = (state: GameState, action: PlaySpellAction): Appl
   }
 
   if (action.targetUnitInstanceId) {
-    const allBoardUnits = Object.values(nextState.players).flatMap((p) => p.board)
-    const combatUnits = nextState.combat
-      ? nextState.combat.slots.flatMap((s) => [s.attacker, s.blocker].filter(Boolean))
+    const allBoardUnits = Object.values(state.players).flatMap((p) => p.board)
+    const combatUnits = state.combat
+      ? state.combat.slots.flatMap((s) => [s.attacker, s.blocker].filter(Boolean))
       : []
 
     const targetExists = [...allBoardUnits, ...combatUnits].some(
@@ -68,9 +82,16 @@ export const playSpellAction = (state: GameState, action: PlaySpellAction): Appl
     }
   }
 
-  const events: GameEvent[] = []
+  return spellCard
+}
 
-  let costLeft = card.cost
+function spendSpellCost(
+  playerState: PlayerState,
+  events: GameEvent[],
+  playerId: string,
+  cost: number,
+): void {
+  let costLeft = cost
   const reservedToSpend = Math.min(playerState.reservedEnergy, costLeft)
   playerState.reservedEnergy -= reservedToSpend
   costLeft -= reservedToSpend
@@ -78,7 +99,7 @@ export const playSpellAction = (state: GameState, action: PlaySpellAction): Appl
   if (reservedToSpend > 0) {
     events.push({
       type: GAME_EVENT_TYPE.ENERGY_CHANGED,
-      playerId: action.playerId,
+      playerId,
       energy: playerState.reservedEnergy,
       isReserved: true,
     })
@@ -88,24 +109,23 @@ export const playSpellAction = (state: GameState, action: PlaySpellAction): Appl
     playerState.energy -= costLeft
     events.push({
       type: GAME_EVENT_TYPE.ENERGY_CHANGED,
-      playerId: action.playerId,
+      playerId,
       energy: playerState.energy,
       isReserved: false,
     })
   }
+}
 
+function deploySpellToStack(
+  state: GameState,
+  action: PlaySpellAction,
+  spellCard: SpellCardInstance,
+): void {
+  const playerState = state.players[action.playerId]!
   playerState.hand = playerState.hand.filter((c) => c.instanceId !== action.cardInstanceId)
 
-  nextState.spellStack.push({
+  state.spellStack.push({
     spell: spellCard,
     targetUnitInstanceId: action.targetUnitInstanceId,
   })
-
-  nextState.turnPlayerId = getNextPlayerId(nextState)
-  nextState.consecutivePasses = 0
-
-  return {
-    state: nextState,
-    events,
-  }
 }

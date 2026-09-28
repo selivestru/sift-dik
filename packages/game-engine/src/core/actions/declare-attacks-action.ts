@@ -16,20 +16,33 @@ export const declareAttacksAction = (
 ): ApplyActionResult => {
   const nextState = structuredClone(state)
 
-  if (nextState.winnerPlayerId !== null) {
-    throw new Error(`Game has already ended. Winner: ${nextState.winnerPlayerId}`)
+  validateDeclareAttacksAction(nextState, action)
+  initializeCombatSlots(nextState, action)
+
+  const events: GameEvent[] = []
+
+  triggerAttackAbilities(nextState, events)
+
+  return {
+    state: nextState,
+    events,
+  }
+}
+
+function validateDeclareAttacksAction(state: GameState, action: DeclareAttacksAction): void {
+  if (state.winnerPlayerId !== null) {
+    throw new Error(`Game has already ended. Winner: ${state.winnerPlayerId}`)
   }
 
-  if (nextState.turnPlayerId !== action.playerId) {
+  if (state.turnPlayerId !== action.playerId) {
     throw new Error(`It is not player "${action.playerId}" turn to attack`)
   }
 
-  if (nextState.combat !== null) {
+  if (state.combat !== null) {
     throw new Error('Cannot declare attacks: combat is already in progress')
   }
 
-  const playerState = nextState.players[action.playerId]!
-
+  const playerState = state.players[action.playerId]!
   if (!playerState.hasAttackToken) {
     throw new Error(`Player "${action.playerId}" does not have an active attack token`)
   }
@@ -39,17 +52,13 @@ export const declareAttacksAction = (
   }
 
   const attackersIds = new Set(action.attackers)
-
   if (attackersIds.size !== action.attackers.length) {
     throw new Error('Cannot declare attack: duplicate attacker IDs detected')
   }
 
-  const playerBoardCards = playerState.board
-
   const allAttackersOnBoard = action.attackers.every((attackerId) =>
     playerState.board.some((unit) => unit.instanceId === attackerId),
   )
-
   if (!allAttackersOnBoard) {
     throw new Error(
       `Cannot declare attack: one or more attackers are not present on player "${action.playerId}" board`,
@@ -60,14 +69,19 @@ export const declareAttacksAction = (
     const unit = playerState.board.find((u) => u.instanceId === id)
     return unit?.keywords?.includes(KEYWORD.CANNOT_ATTACK)
   })
-
   if (hasCannotAttackUnit) {
     throw new Error('Cannot declare attack: one or more attackers have the "cannot_attack" keyword')
   }
+}
 
-  nextState.combat = {
+function initializeCombatSlots(state: GameState, action: DeclareAttacksAction): void {
+  const playerState = state.players[action.playerId]!
+  const playerBoardCards = playerState.board
+  const attackersIds = new Set(action.attackers)
+
+  state.combat = {
     attackerPlayerId: action.playerId,
-    defenderPlayerId: getNextPlayerId(nextState),
+    defenderPlayerId: getNextPlayerId(state),
     slots: action.attackers.map((cardInstanceId) => {
       const attacker = playerBoardCards.find(
         (card) => card.instanceId === cardInstanceId,
@@ -82,24 +96,20 @@ export const declareAttacksAction = (
 
   playerState.board = playerBoardCards.filter((card) => !attackersIds.has(card.instanceId))
   playerState.hasAttackToken = false
-  nextState.turnPlayerId = getNextPlayerId(nextState)
-  nextState.consecutivePasses = 0
+  state.turnPlayerId = getNextPlayerId(state)
+  state.consecutivePasses = 0
+}
 
-  const events: GameEvent[] = []
+function triggerAttackAbilities(state: GameState, events: GameEvent[]): void {
+  const slots = state.combat!.slots
 
-  const slots = nextState.combat.slots
   for (let i = 0; i < slots.length; i++) {
     const currentSlot = slots[i]!
     const supportedAlly = slots[i + 1]?.attacker
 
-    triggerUnitAbilities(nextState, events, currentSlot.attacker, TRIGGER.ON_ATTACK, {
+    triggerUnitAbilities(state, events, currentSlot.attacker, TRIGGER.ON_ATTACK, {
       sourceUnit: currentSlot.attacker,
       targetUnit: supportedAlly,
     })
-  }
-
-  return {
-    state: nextState,
-    events,
   }
 }
