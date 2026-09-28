@@ -2,6 +2,7 @@ import { GAME_ACTION_TYPE, type GameAction, type GameEvent, type GameState } fro
 import { declareAttacksAction } from './actions/declare-attacks-action'
 import { declareBlocksAction } from './actions/declare-blocks-action'
 import { passAction } from './actions/pass-action'
+import { playSpellAction } from './actions/play-spell-action'
 import { playUnitAction } from './actions/play-unit-action'
 
 export interface ApplyActionResult {
@@ -19,5 +20,7 @@ export const applyAction = (state: GameState, action: GameAction): ApplyActionRe
       return declareBlocksAction(state, action)
     case GAME_ACTION_TYPE.PASS:
       return passAction(state, action)
+    case GAME_ACTION_TYPE.PLAY_SPELL:
+      return playSpellAction(state, action)
   }
 }

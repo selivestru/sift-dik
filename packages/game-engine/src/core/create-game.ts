@@ -26,6 +26,7 @@ export const createGame = (
     initiativePlayerId: initiativePlayer.id,
     turnPlayerId: initiativePlayer.id,
     combat: null,
+    spellStack: [],
     winnerPlayerId: null,
     consecutivePasses: 0,
   }

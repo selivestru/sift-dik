@@ -1,4 +1,4 @@
-import type { CardInstance, UnitCardInstance } from './card.types'
+import type { CardInstance, SpellCardInstance, UnitCardInstance } from './card.types'
 
 export interface PlayerState {
   id: string
@@ -24,12 +24,18 @@ export interface CombatState {
   slots: CombatSlot[]
 }
 
+export interface StackSpell {
+  spell: SpellCardInstance
+  targetUnitInstanceId?: string
+}
+
 export interface GameState {
   players: Record<string, PlayerState>
   round: number
   initiativePlayerId: string
   turnPlayerId: string
   combat: CombatState | null
+  spellStack: StackSpell[]
   winnerPlayerId: string | null
   consecutivePasses: number
 }

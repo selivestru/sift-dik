@@ -8,6 +8,8 @@ import {
   type PlayerState,
   type UnitCardInstance,
 } from '../../types'
+import { TRIGGER } from '../../types/abilities.types'
+import { triggerUnitAbilities } from '../abilities/trigger-abilities'
 import type { ApplyActionResult } from '../apply-action'
 
 export const declareBlocksAction = (
@@ -110,7 +112,7 @@ export const declareBlocksAction = (
           isReputation: false,
         })
 
-        applyReputationDamage(nextState, events, defenderPlayer, attackerPlayer.id, rep1)
+        applyReputationDamage(nextState, events, attacker, defenderPlayer, attackerPlayer.id, rep1)
 
         if (blocker.health > 0 && nextState.winnerPlayerId === null) {
           const damageToAttacker = calculateDamage(blocker.attack, attacker)
@@ -140,7 +142,14 @@ export const declareBlocksAction = (
             },
           )
 
-          applyReputationDamage(nextState, events, defenderPlayer, attackerPlayer.id, rep2)
+          applyReputationDamage(
+            nextState,
+            events,
+            attacker,
+            defenderPlayer,
+            attackerPlayer.id,
+            rep2,
+          )
         }
       } else if (hasQuickAttack) {
         const { blockerDamage, reputationDamage } = calculateStrikeDamage(attacker, blocker)
@@ -158,6 +167,7 @@ export const declareBlocksAction = (
         const isGameOver = applyReputationDamage(
           nextState,
           events,
+          attacker,
           defenderPlayer,
           attackerPlayer.id,
           reputationDamage,
@@ -204,6 +214,7 @@ export const declareBlocksAction = (
         applyReputationDamage(
           nextState,
           events,
+          attacker,
           defenderPlayer,
           attackerPlayer.id,
           reputationDamage,
@@ -236,6 +247,7 @@ export const declareBlocksAction = (
         const isGameOver = applyReputationDamage(
           nextState,
           events,
+          attacker,
           defenderPlayer,
           attackerPlayer.id,
           attacker.attack,
@@ -331,6 +343,7 @@ function calculateStrikeDamage(
 function applyReputationDamage(
   state: GameState,
   events: GameEvent[],
+  attacker: UnitCardInstance,
   targetPlayer: PlayerState,
   winnerPlayerId: string,
   amount: number,
@@ -344,6 +357,10 @@ function applyReputationDamage(
     targetId: targetPlayer.id,
     amount,
     isReputation: true,
+  })
+
+  triggerUnitAbilities(state, events, attacker, TRIGGER.ON_REPUTATION_STRIKE, {
+    sourceUnit: attacker,
   })
 
   if (targetPlayer.reputation <= 0) {

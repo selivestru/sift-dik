@@ -18,7 +18,6 @@ const mockUnit: CardDefinition = {
   baseCost: 1,
   cost: 1,
   type: CARD_TYPE.UNIT,
-  maxAttack: 3,
   baseAttack: 2,
   attack: 2,
   maxHealth: 3,

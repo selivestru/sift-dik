@@ -1,3 +1,6 @@
+import type { AbilityType } from './abilities.types'
+import type { SpellType } from './spells.types'
+
 export const CARD_TYPE = {
   UNIT: 'unit',
   SPELL: 'spell',
@@ -15,7 +18,6 @@ export const CARD_FACTION = {
 export type CardFaction = (typeof CARD_FACTION)[keyof typeof CARD_FACTION]
 
 export interface BaseCard {
-  id: string
   name: string
   description: string
   faction: CardFaction
@@ -38,14 +40,18 @@ export const UNIT_KEYWORD = {
 export type UnitKeyword = (typeof UNIT_KEYWORD)[keyof typeof UNIT_KEYWORD]
 
 export interface UnitCard extends BaseCard {
+  id: string
   type: typeof CARD_TYPE.UNIT
   maxHealth: number
   baseHealth: number
   health: number
-  maxAttack: number
   baseAttack: number
   attack: number
+  tempAttack?: number
+  tempHealth?: number
   keywords?: UnitKeyword[]
+  tempKeywords?: UnitKeyword[]
+  abilities?: AbilityType[]
 }
 
 export interface UnitCardInstance extends UnitCard {
@@ -62,6 +68,7 @@ export const SPELL_SPEED = {
 export type SpellSpeed = (typeof SPELL_SPEED)[keyof typeof SPELL_SPEED]
 
 export interface SpellCard extends BaseCard {
+  id: SpellType
   type: typeof CARD_TYPE.SPELL
   speed: SpellSpeed
 }

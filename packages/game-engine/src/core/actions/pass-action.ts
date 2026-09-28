@@ -9,6 +9,7 @@ import {
 } from '../../types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
 import type { ApplyActionResult } from '../apply-action'
+import { resolveSpellStack } from '../spells/resolve-spell-stack'
 
 export const passAction = (state: GameState, action: PassAction): ApplyActionResult => {
   const nextState = structuredClone(state)
@@ -21,11 +22,23 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
     throw new Error(`It is not player "${action.playerId}" turn to pass`)
   }
 
+  const events: GameEvent[] = []
+
+  if (nextState.spellStack.length > 0) {
+    resolveSpellStack(nextState, events)
+
+    nextState.consecutivePasses = 0
+    nextState.turnPlayerId = getNextPlayerId(nextState)
+
+    return {
+      state: nextState,
+      events,
+    }
+  }
+
   if (nextState.combat !== null) {
     throw new Error('Cannot pass while combat is in progress. Declare blocks instead')
   }
-
-  const events: GameEvent[] = []
 
   nextState.consecutivePasses += 1
 
@@ -36,9 +49,24 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
       const player = nextState.players[playerId]!
 
       for (const card of player.board) {
-        const isUnit = card.type === CARD_TYPE.UNIT
+        if (card.type !== CARD_TYPE.UNIT) continue
 
-        if (!isUnit) continue
+        if (card.tempAttack) {
+          card.attack = Math.max(0, card.attack - card.tempAttack)
+          card.tempAttack = 0
+        }
+
+        if (card.tempHealth) {
+          card.health = Math.max(1, card.health - card.tempHealth)
+          card.maxHealth = Math.max(1, card.maxHealth - card.tempHealth)
+          card.tempHealth = 0
+        }
+
+        if (card.tempKeywords && card.tempKeywords.length > 0) {
+          const tempSet = new Set(card.tempKeywords)
+          card.keywords = card.keywords?.filter((k) => !tempSet.has(k))
+          card.tempKeywords = []
+        }
 
         const hasRegeneration = card.keywords?.includes(UNIT_KEYWORD.REGENERATION)
 

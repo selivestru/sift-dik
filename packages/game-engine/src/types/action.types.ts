@@ -3,6 +3,7 @@ export const GAME_ACTION_TYPE = {
   DECLARE_ATTACKS: 'DECLARE_ATTACKS',
   DECLARE_BLOCKS: 'DECLARE_BLOCKS',
   PASS: 'PASS',
+  PLAY_SPELL: 'PLAY_SPELL',
 } as const
 
 export type GameActionType = (typeof GAME_ACTION_TYPE)[keyof typeof GAME_ACTION_TYPE]
@@ -33,4 +34,16 @@ export interface PassAction {
   playerId: string
 }
 
-export type GameAction = PlayUnitAction | DeclareAttacksAction | DeclareBlocksAction | PassAction
+export interface PlaySpellAction {
+  type: typeof GAME_ACTION_TYPE.PLAY_SPELL
+  playerId: string
+  cardInstanceId: string
+  targetUnitInstanceId?: string
+}
+
+export type GameAction =
+  | PlayUnitAction
+  | DeclareAttacksAction
+  | DeclareBlocksAction
+  | PassAction
+  | PlaySpellAction

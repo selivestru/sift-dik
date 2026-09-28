@@ -5,7 +5,9 @@ import {
   type GameState,
   type UnitCardInstance,
 } from '../../types'
+import { TRIGGER } from '../../types/abilities.types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
+import { triggerUnitAbilities } from '../abilities/trigger-abilities'
 import type { ApplyActionResult } from '../apply-action'
 
 export const declareAttacksAction = (
@@ -84,6 +86,17 @@ export const declareAttacksAction = (
   nextState.consecutivePasses = 0
 
   const events: GameEvent[] = []
+
+  const slots = nextState.combat.slots
+  for (let i = 0; i < slots.length; i++) {
+    const currentSlot = slots[i]!
+    const supportedAlly = slots[i + 1]?.attacker
+
+    triggerUnitAbilities(nextState, events, currentSlot.attacker, TRIGGER.ON_ATTACK, {
+      sourceUnit: currentSlot.attacker,
+      targetUnit: supportedAlly,
+    })
+  }
 
   return {
     state: nextState,

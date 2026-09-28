@@ -12,7 +12,6 @@ const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
   baseCost: 1,
   cost: 1,
   type: 'unit',
-  maxAttack: 3,
   baseAttack: 3,
   attack: 3,
   maxHealth: 3,
