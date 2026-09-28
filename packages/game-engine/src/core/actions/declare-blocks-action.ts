@@ -107,6 +107,13 @@ function assignBlockersToCombatSlots(state: GameState, action: DeclareBlocksActi
       )
     }
 
+    const attackerIsPressure = slot.attacker.keywords?.includes(KEYWORD.PRESSURE)
+    if (attackerIsPressure && blockerUnit.attack < 3) {
+      throw new Error(
+        `Cannot declare block: unit "${blockerUnit.instanceId}" has less than 3 attack and cannot block pressure attacker "${slot.attacker.instanceId}"`,
+      )
+    }
+
     slot.blocker = blockerUnit
   }
 }
