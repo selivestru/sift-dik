@@ -82,6 +82,16 @@ export const declareBlocksAction = (
       (s) => s.attacker.instanceId === block.attackerInstanceId,
     )!
     const blockerUnit = blockerUnits.find((u) => u.instanceId === block.defenderInstanceId)!
+
+    const attackerIsElusive = slot.attacker.keywords?.includes(UNIT_KEYWORD.ELUSIVE)
+    const blockerIsElusive = blockerUnit.keywords?.includes(UNIT_KEYWORD.ELUSIVE)
+
+    if (attackerIsElusive && !blockerIsElusive) {
+      throw new Error(
+        `Cannot declare block: unit "${blockerUnit.instanceId}" cannot block elusive attacker "${slot.attacker.instanceId}"`,
+      )
+    }
+
     slot.blocker = blockerUnit
   }
 
