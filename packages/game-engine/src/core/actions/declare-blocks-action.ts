@@ -231,6 +231,26 @@ export const declareBlocksAction = (
         )
       }
 
+      if (
+        attacker.health > 0 &&
+        blocker.health <= 0 &&
+        attacker.keywords?.includes(UNIT_KEYWORD.FURY)
+      ) {
+        attacker.attack += 1
+        attacker.health += 1
+        attacker.maxHealth += 1
+      }
+
+      if (
+        blocker.health > 0 &&
+        attacker.health <= 0 &&
+        blocker.keywords?.includes(UNIT_KEYWORD.FURY)
+      ) {
+        blocker.attack += 1
+        blocker.health += 1
+        blocker.maxHealth += 1
+      }
+
       if (attacker.health <= 0) {
         attackerPlayer.graveyard.push(attacker)
         events.push({ type: GAME_EVENT_TYPE.UNIT_DIED, unitInstanceId: attacker.instanceId })
