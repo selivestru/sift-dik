@@ -2,17 +2,11 @@ import { describe, expect, test } from 'vitest'
 
 import { preemptiveStrike } from '../catalog/spells/preemptive-strike'
 import { applyAction, createGame } from '../core'
-import {
-  GAME_ACTION_TYPE,
-  KEYWORD,
-  type UnitCard,
-} from '../types'
+import { GAME_ACTION_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
 const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
   id: 'unit-template',
-  name: 'Unit',
-  description: 'Test unit',
   faction: 'dik',
   baseCost: 1,
   cost: 1,
@@ -29,7 +23,6 @@ describe('Spell: Preemptive Strike', () => {
   test('should go to spell stack, resolve on pass, grant +0|+2 and quick_attack, and expire at round end', () => {
     const vanillaUnit = createUnit({
       id: 'target-unit',
-      name: 'Target Ally',
       attack: 2,
       baseAttack: 2,
       health: 2,
@@ -40,7 +33,10 @@ describe('Spell: Preemptive Strike', () => {
     const state = createGame(
       [
         { id: 'p1', cards: [createUnit(), createUnit(), createUnit(), createUnit(), createUnit()] },
-        { id: 'p2', cards: [vanillaUnit, preemptiveStrike, createUnit(), createUnit(), createUnit()] },
+        {
+          id: 'p2',
+          cards: [vanillaUnit, preemptiveStrike, createUnit(), createUnit(), createUnit()],
+        },
       ],
       { seed: 42 }, // p2 has initiative
     )

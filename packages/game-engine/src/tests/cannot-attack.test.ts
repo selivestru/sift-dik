@@ -6,8 +6,6 @@ import { getNextPlayerId } from '../utils/getNextPlayerId'
 
 const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
   id: 'unit-template',
-  name: 'Unit',
-  description: 'Test unit',
   faction: 'dik',
   baseCost: 1,
   cost: 1,

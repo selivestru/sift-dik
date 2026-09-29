@@ -1,18 +1,11 @@
 import { describe, expect, test } from 'vitest'
 
 import { applyAction, createGame } from '../core'
-import {
-  GAME_ACTION_TYPE,
-  GAME_EVENT_TYPE,
-  KEYWORD,
-  type UnitCard,
-} from '../types'
+import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
 const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
   id: 'unit-template',
-  name: 'Unit',
-  description: 'Test unit',
   faction: 'dik',
   baseCost: 1,
   cost: 1,
@@ -50,23 +43,11 @@ describe('Keyword: Invulnerable', () => {
       [
         {
           id: 'p1',
-          cards: [
-            invulnerableBlocker,
-            createUnit(),
-            createUnit(),
-            createUnit(),
-            createUnit(),
-          ],
+          cards: [invulnerableBlocker, createUnit(), createUnit(), createUnit(), createUnit()],
         },
         {
           id: 'p2',
-          cards: [
-            hugeAttacker,
-            createUnit(),
-            createUnit(),
-            createUnit(),
-            createUnit(),
-          ],
+          cards: [hugeAttacker, createUnit(), createUnit(), createUnit(), createUnit()],
         },
       ],
       { seed: 42 }, // p2 has initiative
@@ -79,13 +60,16 @@ describe('Keyword: Invulnerable', () => {
     const stateAfterP2 = applyAction(state, {
       type: GAME_ACTION_TYPE.PLAY_UNIT,
       playerId: attackerId,
-      cardInstanceId: state.players[attackerId]!.hand.find((c) => c.id === 'huge-attacker')!.instanceId,
+      cardInstanceId: state.players[attackerId]!.hand.find((c) => c.id === 'huge-attacker')!
+        .instanceId,
     }).state
 
     const stateAfterP1 = applyAction(stateAfterP2, {
       type: GAME_ACTION_TYPE.PLAY_UNIT,
       playerId: defenderId,
-      cardInstanceId: stateAfterP2.players[defenderId]!.hand.find((c) => c.id === 'invulnerable-blocker')!.instanceId,
+      cardInstanceId: stateAfterP2.players[defenderId]!.hand.find(
+        (c) => c.id === 'invulnerable-blocker',
+      )!.instanceId,
     }).state
 
     // 2. Huge attacker attacks, Invulnerable unit blocks

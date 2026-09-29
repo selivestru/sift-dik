@@ -1,18 +1,11 @@
 import { describe, expect, test } from 'vitest'
 
 import { applyAction, createGame } from '../core'
-import {
-  GAME_ACTION_TYPE,
-  GAME_EVENT_TYPE,
-  KEYWORD,
-  type UnitCard,
-} from '../types'
+import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
 const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
   id: 'unit-template',
-  name: 'Unit',
-  description: 'Test unit',
   faction: 'dik',
   baseCost: 1,
   cost: 1,

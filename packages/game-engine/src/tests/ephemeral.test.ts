@@ -1,18 +1,11 @@
 import { describe, expect, test } from 'vitest'
 
 import { applyAction, createGame } from '../core'
-import {
-  GAME_ACTION_TYPE,
-  GAME_EVENT_TYPE,
-  KEYWORD,
-  type UnitCard,
-} from '../types'
+import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
 const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
   id: 'unit-template',
-  name: 'Unit',
-  description: 'Test unit',
   faction: 'dik',
   baseCost: 1,
   cost: 1,
@@ -51,7 +44,10 @@ describe('Keyword: Ephemeral', () => {
     const state = createGame(
       [
         { id: 'p1', cards: [weakBlocker, createUnit(), createUnit(), createUnit(), createUnit()] },
-        { id: 'p2', cards: [ephemeralAttacker, createUnit(), createUnit(), createUnit(), createUnit()] },
+        {
+          id: 'p2',
+          cards: [ephemeralAttacker, createUnit(), createUnit(), createUnit(), createUnit()],
+        },
       ],
       { seed: 42 }, // p2 has initiative
     )
@@ -63,13 +59,15 @@ describe('Keyword: Ephemeral', () => {
     const stateAfterP2 = applyAction(state, {
       type: GAME_ACTION_TYPE.PLAY_UNIT,
       playerId: attackerId,
-      cardInstanceId: state.players[attackerId]!.hand.find((c) => c.id === 'ephemeral-attacker')!.instanceId,
+      cardInstanceId: state.players[attackerId]!.hand.find((c) => c.id === 'ephemeral-attacker')!
+        .instanceId,
     }).state
 
     const stateAfterP1 = applyAction(stateAfterP2, {
       type: GAME_ACTION_TYPE.PLAY_UNIT,
       playerId: defenderId,
-      cardInstanceId: stateAfterP2.players[defenderId]!.hand.find((c) => c.id === 'weak-blocker')!.instanceId,
+      cardInstanceId: stateAfterP2.players[defenderId]!.hand.find((c) => c.id === 'weak-blocker')!
+        .instanceId,
     }).state
 
     // 2. P2 attacks with Ephemeral unit, P1 blocks
@@ -113,7 +111,10 @@ describe('Keyword: Ephemeral', () => {
     const state = createGame(
       [
         { id: 'p1', cards: [createUnit(), createUnit(), createUnit(), createUnit(), createUnit()] },
-        { id: 'p2', cards: [ephemeralUnit, createUnit(), createUnit(), createUnit(), createUnit()] },
+        {
+          id: 'p2',
+          cards: [ephemeralUnit, createUnit(), createUnit(), createUnit(), createUnit()],
+        },
       ],
       { seed: 42 }, // p2 has initiative
     )

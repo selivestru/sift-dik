@@ -12,8 +12,6 @@ import { getNextPlayerId } from '../utils/getNextPlayerId'
 
 const mockUnit: CardDefinition = {
   id: 'test-unit',
-  name: 'Test Unit',
-  description: 'Vanilla unit',
   faction: CARD_FACTION.DIK,
   baseCost: 1,
   cost: 1,

@@ -1,18 +1,11 @@
 import { describe, expect, test } from 'vitest'
 
 import { applyAction, createGame } from '../core'
-import {
-  GAME_ACTION_TYPE,
-  GAME_EVENT_TYPE,
-  KEYWORD,
-  type UnitCard,
-} from '../types'
+import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
 const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
   id: 'unit-template',
-  name: 'Unit',
-  description: 'Test unit',
   faction: 'dik',
   baseCost: 1,
   cost: 1,
@@ -29,13 +22,11 @@ describe('Keyword: Fleeting', () => {
   test('fleeting card in hand is discarded to graveyard at round end', () => {
     const fleetingCard = createUnit({
       id: 'fleeting-card',
-      name: 'Fleeting Spark',
       keywords: [KEYWORD.FLEETING],
     })
 
     const normalCard = createUnit({
       id: 'normal-card',
-      name: 'Stable Ally',
     })
 
     const state = createGame(
@@ -76,12 +67,16 @@ describe('Keyword: Fleeting', () => {
     // In Round 2:
     // 1. Fleeting card is discarded from hand
     expect(
-      roundEndResult.state.players[p2Id]!.hand.some((c) => c.instanceId === fleetingInHand.instanceId),
+      roundEndResult.state.players[p2Id]!.hand.some(
+        (c) => c.instanceId === fleetingInHand.instanceId,
+      ),
     ).toBe(false)
 
     // 2. Normal card is still in hand
     expect(
-      roundEndResult.state.players[p2Id]!.hand.some((c) => c.instanceId === normalInHand.instanceId),
+      roundEndResult.state.players[p2Id]!.hand.some(
+        (c) => c.instanceId === normalInHand.instanceId,
+      ),
     ).toBe(true)
 
     // 3. Fleeting card moved to graveyard

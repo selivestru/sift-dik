@@ -18,8 +18,6 @@ export const CARD_FACTION = {
 export type CardFaction = (typeof CARD_FACTION)[keyof typeof CARD_FACTION]
 
 export interface BaseCard {
-  name: string
-  description: string
   faction: CardFaction
   baseCost: number
   cost: number

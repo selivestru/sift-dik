@@ -7,8 +7,6 @@ import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../ty
 
 const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
   id: 'unit-template',
-  name: 'Unit',
-  description: 'Test unit',
   faction: 'dik',
   baseCost: 1,
   cost: 1,
@@ -24,7 +22,6 @@ const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
 const createTremoloGame = () => {
   const allyCard = createUnit({
     id: 'freshman-ally',
-    name: 'Freshman Ally',
     attack: 2,
     baseAttack: 2,
     health: 2,
