@@ -8,19 +8,31 @@ import {
   type PlayUnitAction,
   type UnitCardInstance,
 } from '../../types'
+import { TRIGGER, type AbilityContextInput, type AbilityType } from '../../types/abilities.types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
+import { ABILITIES } from '../abilities/registry'
+import { triggerUnitAbilities } from '../abilities/trigger-abilities'
 import type { ApplyActionResult } from '../apply-action'
 
 export const playUnitAction = (state: GameState, action: PlayUnitAction): ApplyActionResult => {
   const nextState: GameState = structuredClone(state)
 
   const card = validatePlayUnitAction(nextState, action)
+  const abilityContexts = parseAbilityPayloads(card, action)
 
   const events: GameEvent[] = []
 
   spendUnitCost(nextState, events, action.playerId, card.cost)
   deployUnitToBoard(nextState, events, action.playerId, card)
   triggerImpulseIfApplicable(nextState, events, action.playerId, card)
+  triggerUnitAbilities(
+    nextState,
+    events,
+    card,
+    TRIGGER.ON_SUMMON,
+    { sourceUnit: card },
+    abilityContexts,
+  )
 
   nextState.turnPlayerId = getNextPlayerId(nextState)
   nextState.consecutivePasses = 0
@@ -71,6 +83,26 @@ function validatePlayUnitAction(state: GameState, action: PlayUnitAction): UnitC
   }
 
   return card
+}
+
+function parseAbilityPayloads(card: UnitCardInstance, action: PlayUnitAction): AbilityContextInput {
+  const parsed: Partial<Record<AbilityType, unknown>> = {}
+
+  for (const abilityId of card.abilities ?? []) {
+    const schema = ABILITIES[abilityId]?.payloadSchema
+
+    if (!schema) continue
+
+    const result = schema.safeParse(action.abilityContexts?.[abilityId])
+
+    if (!result.success) {
+      throw new Error(`Invalid payload for ability "${abilityId}": ${result.error.message}`)
+    }
+
+    parsed[abilityId] = result.data
+  }
+
+  return parsed as AbilityContextInput
 }
 
 function spendUnitCost(

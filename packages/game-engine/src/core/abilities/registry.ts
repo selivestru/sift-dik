@@ -1,19 +1,12 @@
-import {
-  ABILITY,
-  TRIGGER,
-  type AbilityHandler,
-  type AbilityType,
-} from '../../types/abilities.types'
-import { handleTremoloReputationStrike } from './handlers/tremolo-reputation-strike'
-import { handleTremoloSupport } from './handlers/tremolo-support'
+import { ABILITY, TRIGGER, type AbilityHandlerMap } from '../../types/abilities.types'
+import { handleSupport } from './handlers/support'
+import { handleTremoloPath, tremoloPathPayloadSchema } from './handlers/tremolo-path'
 
-export const ABILITIES: Record<AbilityType, AbilityHandler> = {
-  [ABILITY.TREMOLO_SUPPORT]: {
-    trigger: TRIGGER.ON_ATTACK,
-    execute: handleTremoloSupport,
+export const ABILITIES: AbilityHandlerMap = {
+  [ABILITY.TREMOLO_PATH]: {
+    trigger: TRIGGER.ON_SUMMON,
+    execute: handleTremoloPath,
+    payloadSchema: tremoloPathPayloadSchema,
   },
-  [ABILITY.TREMOLO_REPUTATION_STRIKE]: {
-    trigger: TRIGGER.ON_REPUTATION_STRIKE,
-    execute: handleTremoloReputationStrike,
-  },
+  [ABILITY.SUPPORT]: { trigger: TRIGGER.ON_ATTACK, execute: handleSupport },
 }

@@ -1,11 +1,12 @@
-import { CARD_FACTION, CARD_TYPE, KEYWORD, type UnitCard } from '../../types'
+import { CHARACTERS } from '../../constants/characters'
+import { CARD_FACTION, CARD_TYPE, type UnitCard } from '../../types'
 import { ABILITY } from '../../types/abilities.types'
 
 export const tremoloCard: UnitCard = {
-  id: 'tremolo',
+  id: CHARACTERS.TREMOLO,
   name: 'Тремоло',
   description:
-    'Быстрая атака. Поддержка: даруйте поддерживаемому союзнику +1|+1 в этом раунде. Удар по Репутации: восполните 1 ед. Запасной энергии.',
+    'Призыв: выберите путь — DIK: даруйте мне +1|+0 и Быструю атаку. Neutral: уменьшите мою атаку на 1, даруйте мне Изворотливость и восполните 1 ед. Запасной энергии. CHICK: даруйте мне Стойкость и Поддержку (Поддержка: даруйте поддерживаемому союзнику +1|+1 в этом раунде).',
   faction: CARD_FACTION.DIK,
   type: CARD_TYPE.UNIT,
   baseCost: 3,
@@ -15,6 +16,6 @@ export const tremoloCard: UnitCard = {
   baseHealth: 3,
   health: 3,
   maxHealth: 3,
-  keywords: [KEYWORD.QUICK_ATTACK],
-  abilities: [ABILITY.TREMOLO_SUPPORT, ABILITY.TREMOLO_REPUTATION_STRIKE],
+  keywords: [],
+  abilities: [ABILITY.TREMOLO_PATH],
 }

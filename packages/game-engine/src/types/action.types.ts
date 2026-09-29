@@ -1,3 +1,5 @@
+import type { AbilityContextInput } from './abilities.types'
+
 export const GAME_ACTION_TYPE = {
   PLAY_UNIT: 'PLAY_UNIT',
   DECLARE_ATTACKS: 'DECLARE_ATTACKS',
@@ -12,6 +14,7 @@ export interface PlayUnitAction {
   type: typeof GAME_ACTION_TYPE.PLAY_UNIT
   playerId: string
   cardInstanceId: string
+  abilityContexts?: AbilityContextInput
 }
 
 export interface DeclareAttacksAction {

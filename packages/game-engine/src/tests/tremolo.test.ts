@@ -1,13 +1,9 @@
 import { describe, expect, test } from 'vitest'
 
 import { tremoloCard } from '../catalog/characters/tremolo'
+import { TREMOLO_PATH, type TremoloPath } from '../constants/characters'
 import { applyAction, createGame } from '../core'
-import {
-  GAME_ACTION_TYPE,
-  GAME_EVENT_TYPE,
-  type UnitCard,
-} from '../types'
-import { getNextPlayerId } from '../utils/getNextPlayerId'
+import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 
 const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
   id: 'unit-template',
@@ -25,101 +21,126 @@ const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
   ...overrides,
 })
 
+const createTremoloGame = () => {
+  const allyCard = createUnit({
+    id: 'freshman-ally',
+    name: 'Freshman Ally',
+    attack: 2,
+    baseAttack: 2,
+    health: 2,
+    baseHealth: 2,
+    maxHealth: 2,
+  })
+
+  const state = createGame(
+    [
+      { id: 'p1', cards: [createUnit(), createUnit(), createUnit(), createUnit(), createUnit()] },
+      { id: 'p2', cards: [tremoloCard, allyCard, tremoloCard, allyCard, tremoloCard] },
+    ],
+    { seed: 42 },
+  )
+
+  state.players.p2!.energy = 10
+  state.players.p2!.maxEnergy = 10
+
+  return state
+}
+
+const playTremolo = (state: ReturnType<typeof createTremoloGame>, chosenPath?: TremoloPath) => {
+  const playerId = state.turnPlayerId
+  const tremoloInHand = state.players[playerId]!.hand.find((c) => c.id === 'tremolo')!
+
+  return applyAction(state, {
+    type: GAME_ACTION_TYPE.PLAY_UNIT,
+    playerId,
+    cardInstanceId: tremoloInHand.instanceId,
+    abilityContexts: chosenPath ? { tremolo_path: { chosenPath } } : undefined,
+  })
+}
+
 describe('Character: Tremolo', () => {
-  test('Support: should grant +1|+1 to supported ally on attack, and buff should expire at round end', () => {
-    const allyCard = createUnit({
-      id: 'freshman-ally',
-      name: 'Freshman Ally',
-      attack: 2,
-      baseAttack: 2,
-      health: 2,
-      baseHealth: 2,
-      maxHealth: 2,
+  test('DIK path: grants permanent +1|+0 and quick_attack on summon', () => {
+    const state = createTremoloGame()
+
+    const result = playTremolo(state, TREMOLO_PATH.DIK)
+
+    const tremolo = result.state.players.p2!.board.find((u) => u.id === 'tremolo')!
+    expect(tremolo.attack).toBe(4)
+    expect(tremolo.keywords).toContain(KEYWORD.QUICK_ATTACK)
+    expect(tremolo.tempKeywords ?? []).toHaveLength(0)
+  })
+
+  test('Neutral path: reduces attack by 1, grants elusive and restores 1 reserved energy', () => {
+    const state = createTremoloGame()
+
+    const result = playTremolo(state, TREMOLO_PATH.NEUTRAL)
+
+    const tremolo = result.state.players.p2!.board.find((u) => u.id === 'tremolo')!
+    expect(tremolo.attack).toBe(2)
+    expect(tremolo.keywords).toContain(KEYWORD.ELUSIVE)
+
+    expect(result.events).toContainEqual({
+      type: GAME_EVENT_TYPE.ENERGY_CHANGED,
+      playerId: 'p2',
+      energy: 1,
+      isReserved: true,
     })
+    expect(result.state.players.p2!.reservedEnergy).toBe(1)
+  })
 
-    const state = createGame(
-      [
-        { id: 'p1', cards: [createUnit(), createUnit(), createUnit(), createUnit(), createUnit()] },
-        { id: 'p2', cards: [tremoloCard, allyCard, tremoloCard, allyCard, tremoloCard] },
-      ],
-      { seed: 42 }, // p2 has initiative
-    )
+  test('CHICK path: grants tough and support buffs the ally to the right, expiring at round end', () => {
+    const state = createTremoloGame()
 
-    const attackerId = state.turnPlayerId // p2
-    const defenderId = getNextPlayerId(state) // p1
+    const tremoloPlay = playTremolo(state, TREMOLO_PATH.CHICK)
 
-    // Step 1: P2 plays Tremolo (cost 3, energy 1 -> set energy to 10 for test)
-    state.players[attackerId]!.energy = 10
-    state.players[attackerId]!.maxEnergy = 10
+    const tremolo = tremoloPlay.state.players.p2!.board.find((u) => u.id === 'tremolo')!
+    expect(tremolo.keywords).toContain(KEYWORD.TOUGH)
+    expect(tremolo.abilities).toContain('support')
 
-    const tremoloInHand = state.players[attackerId]!.hand.find((c) => c.id === 'tremolo')!
-    const allyInHand = state.players[attackerId]!.hand.find((c) => c.id === 'freshman-ally')!
-
-    const afterTremoloPlay = applyAction(state, {
-      type: GAME_ACTION_TYPE.PLAY_UNIT,
-      playerId: attackerId,
-      cardInstanceId: tremoloInHand.instanceId,
-    }).state
-
-    // P1 passes priority back to P2
-    const p1Pass1 = applyAction(afterTremoloPlay, {
+    const p1Pass1 = applyAction(tremoloPlay.state, {
       type: GAME_ACTION_TYPE.PASS,
-      playerId: defenderId,
+      playerId: 'p1',
     }).state
 
-    // P2 plays Ally
+    const allyInHand = p1Pass1.players.p2!.hand.find((c) => c.id === 'freshman-ally')!
     const afterAllyPlay = applyAction(p1Pass1, {
       type: GAME_ACTION_TYPE.PLAY_UNIT,
-      playerId: attackerId,
+      playerId: 'p2',
       cardInstanceId: allyInHand.instanceId,
     }).state
 
-    // P1 passes priority back to P2
     const p1Pass2 = applyAction(afterAllyPlay, {
       type: GAME_ACTION_TYPE.PASS,
-      playerId: defenderId,
+      playerId: 'p1',
     }).state
 
-    const tremoloUnit = p1Pass2.players[attackerId]!.board.find((u) => u.id === 'tremolo')!
-    const allyUnit = p1Pass2.players[attackerId]!.board.find((u) => u.id === 'freshman-ally')!
+    const tremoloOnBoard = p1Pass2.players.p2!.board.find((u) => u.id === 'tremolo')!
+    const allyOnBoard = p1Pass2.players.p2!.board.find((u) => u.id === 'freshman-ally')!
 
-    // Step 2: P2 declares attack: [Tremolo, Ally] -> Tremolo supports Ally to his right
     const attackResult = applyAction(p1Pass2, {
       type: GAME_ACTION_TYPE.DECLARE_ATTACKS,
-      playerId: attackerId,
-      attackers: [tremoloUnit.instanceId, allyUnit.instanceId],
+      playerId: 'p2',
+      attackers: [tremoloOnBoard.instanceId, allyOnBoard.instanceId],
     })
 
     const slotAlly = attackResult.state.combat!.slots[1]!.attacker
-    // Ally received +1|+1 in combat
     expect(slotAlly.attack).toBe(3)
     expect(slotAlly.health).toBe(3)
     expect(slotAlly.tempAttack).toBe(1)
     expect(slotAlly.tempHealth).toBe(1)
 
-    // Step 3: P1 declares no blocks
     const combatResult = applyAction(attackResult.state, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
-      playerId: defenderId,
+      playerId: 'p1',
       blocks: [],
     })
 
-    // Both survived and returned to board
-    const allyOnBoard = combatResult.state.players[attackerId]!.board.find(
+    const allyAfterCombat = combatResult.state.players.p2!.board.find(
       (u) => u.id === 'freshman-ally',
     )!
-    expect(allyOnBoard.attack).toBe(3)
-    expect(allyOnBoard.health).toBe(3)
+    expect(allyAfterCombat.attack).toBe(3)
+    expect(allyAfterCombat.health).toBe(3)
 
-    // Tremolo hit reputation -> Reputation Strike triggered!
-    expect(combatResult.events).toContainEqual({
-      type: GAME_EVENT_TYPE.ENERGY_CHANGED,
-      playerId: attackerId,
-      energy: 1,
-      isReserved: true,
-    })
-
-    // Step 4: End round -> Temporary buffs expire
     const pass1 = applyAction(combatResult.state, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: combatResult.state.turnPlayerId,
@@ -130,13 +151,43 @@ describe('Character: Tremolo', () => {
       playerId: pass1.turnPlayerId,
     }).state
 
-    // In Round 2, Ally reverted back to 2/2
-    const allyRound2 = nextRoundState.players[attackerId]!.board.find(
-      (u) => u.id === 'freshman-ally',
-    )!
+    const allyRound2 = nextRoundState.players.p2!.board.find((u) => u.id === 'freshman-ally')!
     expect(allyRound2.attack).toBe(2)
     expect(allyRound2.health).toBe(2)
     expect(allyRound2.tempAttack).toBe(0)
     expect(allyRound2.tempHealth).toBe(0)
+  })
+
+  test('Rejects playing Tremolo without a chosen path', () => {
+    const state = createTremoloGame()
+
+    expect(() => playTremolo(state)).toThrow(/tremolo_path/)
+  })
+
+  test('Rejects playing Tremolo with an unknown path', () => {
+    const state = createTremoloGame()
+
+    expect(() => playTremolo(state, 'chad' as TremoloPath)).toThrow(/Invalid option/)
+  })
+
+  test('Other units do not require a path and are unaffected by ON_SUMMON', () => {
+    const state = createTremoloGame()
+
+    const p2Pass = applyAction(state, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: 'p2',
+    }).state
+
+    const unitInHand = p2Pass.players.p1!.hand.find((c) => c.id === 'unit-template')!
+
+    const result = applyAction(p2Pass, {
+      type: GAME_ACTION_TYPE.PLAY_UNIT,
+      playerId: 'p1',
+      cardInstanceId: unitInHand.instanceId,
+    })
+
+    const unit = result.state.players.p1!.board.find((u) => u.id === 'unit-template')!
+    expect(unit.attack).toBe(2)
+    expect(unit.keywords ?? []).toHaveLength(0)
   })
 })
