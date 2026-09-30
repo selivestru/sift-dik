@@ -128,7 +128,7 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
     - _Test:_ `src/tests/tremolo.test.ts`.
   - **Preemptive Strike (`src/catalog/spells/preemptive-strike.ts`):**
     - Fast spell, Cost 3.
-    - Grants target ally +0|+2 and temporary `quick_attack` until round end.
+    - Grants target ally +2|+1 and temporary `quick_attack` until round end.
     - _Test:_ `src/tests/preemptive-strike.test.ts`.
 
 ### Layer 1: Localization & Interactive Descriptions (COMPLETED)

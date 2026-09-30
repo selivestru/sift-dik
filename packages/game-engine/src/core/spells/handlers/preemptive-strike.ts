@@ -21,16 +21,23 @@ export const handlePreemptiveStrike = (
 
   if (!target) return
 
-  target.health += 2
-  target.maxHealth += 2
-  target.tempHealth = (target.tempHealth ?? 0) + 2
+  target.health += 1
+  target.maxHealth += 1
+  target.tempHealth = (target.tempHealth ?? 0) + 1
+
+  target.attack += 2
+  target.tempAttack = (target.tempAttack ?? 0) + 2
 
   if (!target.keywords) {
     target.keywords = []
   }
 
+  if (!target.tempKeywords) {
+    target.tempKeywords = []
+  }
+
   if (!target.keywords.includes(KEYWORD.QUICK_ATTACK)) {
     target.keywords.push(KEYWORD.QUICK_ATTACK)
-    target.tempKeywords = [...(target.tempKeywords ?? []), KEYWORD.QUICK_ATTACK]
+    target.tempKeywords.push(KEYWORD.QUICK_ATTACK)
   }
 }

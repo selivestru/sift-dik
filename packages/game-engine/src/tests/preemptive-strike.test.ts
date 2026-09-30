@@ -20,7 +20,7 @@ const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
 })
 
 describe('Spell: Preemptive Strike', () => {
-  test('should go to spell stack, resolve on pass, grant +0|+2 and quick_attack, and expire at round end', () => {
+  test('should go to spell stack, resolve on pass, grant +2|+1 and quick_attack, and expire at round end', () => {
     const vanillaUnit = createUnit({
       id: 'target-unit',
       attack: 2,
@@ -99,9 +99,9 @@ describe('Spell: Preemptive Strike', () => {
 
     // Target ally received +0|+2 and quick_attack!
     const buffedUnit = passResult.state.players[p2Id]!.board.find((u) => u.id === 'target-unit')!
-    expect(buffedUnit.health).toBe(4)
-    expect(buffedUnit.maxHealth).toBe(4)
-    expect(buffedUnit.attack).toBe(2)
+    expect(buffedUnit.health).toBe(3)
+    expect(buffedUnit.maxHealth).toBe(3)
+    expect(buffedUnit.attack).toBe(4)
     expect(buffedUnit.keywords).toContain(KEYWORD.QUICK_ATTACK)
     expect(buffedUnit.tempKeywords).toContain(KEYWORD.QUICK_ATTACK)
 

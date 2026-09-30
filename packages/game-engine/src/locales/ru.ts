@@ -13,7 +13,7 @@ export const ru: Locale = {
     },
     [SPELL_TYPES.PREEMPTIVE_STRIKE]: {
       name: 'Удар на опережение',
-      description: 'Даруйте союзнику +0|+2 и {quick_attack} до конца раунда.',
+      description: 'Даруйте союзнику +2|+1 и {quick_attack} до конца раунда.',
     },
   },
   terms: {

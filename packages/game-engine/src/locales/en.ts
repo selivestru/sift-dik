@@ -13,7 +13,7 @@ export const en: Locale = {
     },
     [SPELL_TYPES.PREEMPTIVE_STRIKE]: {
       name: 'Preemptive Strike',
-      description: 'Give an ally +0|+2 and {quick_attack} this round.',
+      description: 'Give an ally +2|+1 and {quick_attack} this round.',
     },
   },
   terms: {
