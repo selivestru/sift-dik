@@ -42,6 +42,8 @@ export const KEYWORD = {
   PRESSURE: 'pressure',
   BARRIER: 'barrier',
   STUNNED: 'stunned',
+  CHALLENGER: 'challenger',
+  VULNERABLE: 'vulnerable',
 } as const
 
 export type Keyword = (typeof KEYWORD)[keyof typeof KEYWORD]

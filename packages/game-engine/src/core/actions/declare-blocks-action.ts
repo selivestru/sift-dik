@@ -112,6 +112,10 @@ function assignBlockersToCombatSlots(state: GameState, action: DeclareBlocksActi
       )
     }
 
+    if (slot.blocker) {
+      throw new Error('Cannot declare block: one or more attackers already have a forced blocker')
+    }
+
     slot.blocker = blockerUnit
   }
 }

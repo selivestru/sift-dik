@@ -21,6 +21,10 @@ export interface DeclareAttacksAction {
   type: typeof GAME_ACTION_TYPE.DECLARE_ATTACKS
   playerId: string
   attackers: string[]
+  forcedBlockers?: {
+    attackerInstanceId: string
+    defenderInstanceId: string
+  }[]
 }
 
 export interface DeclareBlocksAction {

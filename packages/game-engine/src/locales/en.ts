@@ -134,5 +134,14 @@ export const en: Locale = {
       name: 'Stun',
       rules: "A stunned unit is removed from combat and can't attack or block this round.",
     },
+    challenger: {
+      name: 'Challenger',
+      rules: 'When attacking, force an enemy to block me.',
+    },
+    vulnerable: {
+      name: 'Vulnerable',
+      rules:
+        'The enemy can force this unit to block any attacker, ignoring restrictions that prevent blocking (except being stunned).',
+    },
   },
 }

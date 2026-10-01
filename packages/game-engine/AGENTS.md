@@ -78,7 +78,7 @@ Welcome, Agent. This document contains all essential domain knowledge, architect
   - **Combat strike resolution** (`src/core/combat/resolve-combat.ts`): strikes resolve only when the spell stack is empty AND both players pass consecutively during active combat. Resolves slots left-to-right with double attack, quick attack, standard strikes, lifesteal, overwhelm, ram, fury, invulnerable, barrier, and ephemeral mechanics. After resolution combat closes and priority returns to the attacker. This enables LoR reaction windows: fast spells can be cast after blocks are declared and apply before strikes (e.g. Preemptive Strike on a blocked attacker, stunning a blocker so the attacker strikes Reputation).
   - `PASS`: if spells are on the stack, resolves the stack (LIFO) first. If combat is active with an empty stack: two consecutive passes resolve strikes instead of ending the round; `consecutivePasses` resets after combat, so combat passes never advance the round. Outside combat, `consecutivePasses === 2`: increments round, alternates initiative and attack token, rolls unspent energy into reserved energy (cap 3), refills energy, draws 1 card, discards fleeting cards, purges unspent ephemeral units, resets temporary stats (`tempAttack`, `tempHealth`, `tempKeywords`, `barrier`).
 
-### Layer 1: Combat Keywords & Mechanics (18 KEYWORDS COMPLETED)
+### Layer 1: Combat Keywords & Mechanics (20 KEYWORDS COMPLETED)
 
 All 17 combat keywords are implemented with dedicated isolated test suites (1 test file per keyword):
 
@@ -99,7 +99,9 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
 15. **`invulnerable` (`src/tests/invulnerable.test.ts`):** Unit is immune to all combat damage (takes 0 damage).
 16. **`pressure` (`src/tests/pressure.test.ts`):** Unit with pressure can only be blocked by enemies with 3 or more attack.
 17. **`barrier` (`src/tests/barrier.test.ts`):** Negates the next incoming damage > 0 and is consumed. Unconsumed barriers expire at round end.
-18. **`stunned` (`src/tests/stun.test.ts`):** Stunned unit cannot be declared as attacker or blocker this round; a unit stunned while attacking is removed from combat and returns to its owner's board. Expires at round end via `tempKeywords`.
+18. **`stunned` (`src/tests/stun.test.ts`):** Stunned unit cannot be declared as attacker or blocker this round; a unit stunned while attacking is removed from combat and returns to its owner's board. Expires at round end via `tempKeywords`. Stunned units cannot be forced to block via `challenger`/`vulnerable` (hard restriction, as in LoR).
+19. **`challenger` (`src/tests/challenger.test.ts`):** When attacking, the owner MAY pass `forcedBlockers` in `DECLARE_ATTACKS` to force an enemy to block this unit. The forced unit must be a valid blocker (no `stunned`/`cannot_block`, elusive pairing, pressure 3+ attack). The forced blocker is assigned into the combat slot at attack declaration and cannot be re-blocked by the defender.
+20. **`vulnerable` (`src/tests/vulnerable.test.ts`):** ANY attacking unit (without `challenger`) can force this unit to block it via `forcedBlockers`. Forcing a vulnerable unit ignores `cannot_block`, elusive and pressure; being `stunned` still prevents forcing (see keyword 18).
 
 ### Layer 1: Spells & Spell Stack System (COMPLETED)
 
@@ -200,11 +202,12 @@ src/
 │   │   └── play-unit-action.ts       # Decomposed unit summon coordinator
 │   ├── apply-action.ts               # Central action dispatcher
 │   └── create-game.ts                # Deterministic game initialization
-├── tests/                            # Vitest suites (1 test file per mechanic, 26 files total)
+├── tests/                            # Vitest suites (1 test file per mechanic, 28 files total)
 │   ├── barrier.test.ts
 │   ├── burst-speed.test.ts
 │   ├── cannot-attack.test.ts
 │   ├── cannot-block.test.ts
+│   ├── challenger.test.ts
 │   ├── combat-reaction.test.ts
 │   ├── double-attack.test.ts
 │   ├── elusive.test.ts
@@ -226,7 +229,8 @@ src/
 │   ├── spell-stack.test.ts
 │   ├── stun.test.ts
 │   ├── tough.test.ts
-│   └── tremolo.test.ts
+│   ├── tremolo.test.ts
+│   └── vulnerable.test.ts
 ├── types/                            # TypeScript interfaces & discriminated unions
 │   ├── abilities.types.ts
 │   ├── action.types.ts
