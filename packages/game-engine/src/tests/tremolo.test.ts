@@ -92,7 +92,7 @@ describe('Character: Tremolo', () => {
 
     const tremolo = tremoloPlay.state.players.p2!.board.find((u) => u.id === 'tremolo')!
     expect(tremolo.keywords).toContain(KEYWORD.TOUGH)
-    expect(tremolo.abilities).toContain('support')
+    expect(tremolo.abilities).toContain('tremolo_support')
 
     const p1Pass1 = applyAction(tremoloPlay.state, {
       type: GAME_ACTION_TYPE.PASS,

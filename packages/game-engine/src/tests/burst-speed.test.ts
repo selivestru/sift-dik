@@ -61,8 +61,7 @@ describe('Spell speed: Burst', () => {
       playerId: p2Id,
       cardInstanceId: afterP1Play.players[p2Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_BURST)!
         .instanceId,
-      targetUnitInstanceId: afterP1Play.players[p2Id]!.board.find((u) => u.id === 'burst-target')!
-        .instanceId,
+      targets: [afterP1Play.players[p2Id]!.board.find((u) => u.id === 'burst-target')!.instanceId],
     })
 
     // Effect applied immediately, nothing on the stack
@@ -150,7 +149,7 @@ describe('Spell speed: Burst', () => {
       playerId: p2Id,
       cardInstanceId: blockState.players[p2Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_BURST)!
         .instanceId,
-      targetUnitInstanceId: attackerOnBoard.instanceId,
+      targets: [attackerOnBoard.instanceId],
     })
 
     expect(burstResult.state.spellStack).toHaveLength(0)

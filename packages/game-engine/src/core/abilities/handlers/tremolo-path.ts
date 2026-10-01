@@ -65,8 +65,8 @@ function applyChickPath(unit: UnitCardInstance): void {
     unit.abilities = []
   }
 
-  if (!unit.abilities.includes(ABILITY.SUPPORT)) {
-    unit.abilities.push(ABILITY.SUPPORT)
+  if (!unit.abilities.includes(ABILITY.TREMOLO_SUPPORT)) {
+    unit.abilities.push(ABILITY.TREMOLO_SUPPORT)
   }
 }
 

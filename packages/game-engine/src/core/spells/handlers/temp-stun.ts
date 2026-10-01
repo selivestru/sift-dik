@@ -41,7 +41,7 @@ export const handleTempStun = (
   _events: GameEvent[],
   { spellItem }: SpellContext,
 ): void => {
-  const targetId = spellItem.targetUnitInstanceId
+  const targetId = spellItem.targets?.[0]
 
   if (!targetId) return
 

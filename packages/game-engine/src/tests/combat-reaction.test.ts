@@ -182,7 +182,7 @@ describe('Combat reaction window', () => {
       cardInstanceId: blockState.players[attackerId]!.hand.find(
         (c) => c.id === 'preemptive-strike',
       )!.instanceId,
-      targetUnitInstanceId: attackerOnBoard.instanceId,
+      targets: [attackerOnBoard.instanceId],
     })
 
     expect(spellResult.state.combat).not.toBeNull()

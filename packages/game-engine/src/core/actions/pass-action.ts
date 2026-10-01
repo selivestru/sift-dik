@@ -1,8 +1,8 @@
-import { MAX_CARDS_IN_HAND } from '../../constants/game'
 import {
   CARD_TYPE,
   GAME_EVENT_TYPE,
   KEYWORD,
+  type CardInstance,
   type GameEvent,
   type GameState,
   type PassAction,
@@ -10,9 +10,11 @@ import {
   type UnitCardInstance,
 } from '../../types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
+import { notifyAllyDeath } from '../abilities/trigger-abilities'
 import type { ApplyActionResult } from '../apply-action'
 import { resolveCombat } from '../combat/resolve-combat'
 import { resolveSpellItem } from '../spells/resolve-spell-stack'
+import { drawCard } from '../utils/draw-card'
 
 export const passAction = (state: GameState, action: PassAction): ApplyActionResult => {
   const nextState = structuredClone(state)
@@ -107,7 +109,7 @@ function progressRound(state: GameState, events: GameEvent[]): void {
   events.push({ type: GAME_EVENT_TYPE.ROUND_ENDED, round: state.round })
 
   for (const playerId in state.players) {
-    endPlayerRoundCleanup(state.players[playerId]!, events)
+    endPlayerRoundCleanup(state, state.players[playerId]!, events)
   }
 
   advanceRound(state, events)
@@ -116,14 +118,25 @@ function progressRound(state: GameState, events: GameEvent[]): void {
   state.consecutivePasses = 0
 }
 
-function endPlayerRoundCleanup(player: PlayerState, events: GameEvent[]): void {
+function endPlayerRoundCleanup(state: GameState, player: PlayerState, events: GameEvent[]): void {
   discardFleetingCards(player, events)
-  purgeEphemeralUnits(player, events)
+  purgeEphemeralUnits(state, player, events)
+  restoreCardCosts(player.hand)
+  restoreCardCosts(player.board)
 
   for (const card of player.board) {
     if (card.type !== CARD_TYPE.UNIT) continue
 
     resetUnitRoundState(card, events)
+  }
+}
+
+function restoreCardCosts(cards: CardInstance[]): void {
+  for (const card of cards) {
+    if (!card.tempCost) continue
+
+    card.cost += card.tempCost
+    card.tempCost = 0
   }
 }
 
@@ -145,7 +158,7 @@ function discardFleetingCards(player: PlayerState, events: GameEvent[]): void {
   }
 }
 
-function purgeEphemeralUnits(player: PlayerState, events: GameEvent[]): void {
+function purgeEphemeralUnits(state: GameState, player: PlayerState, events: GameEvent[]): void {
   const ephemeralUnits = player.board.filter((card) => card.keywords?.includes(KEYWORD.EPHEMERAL))
 
   if (ephemeralUnits.length === 0) return
@@ -159,6 +172,7 @@ function purgeEphemeralUnits(player: PlayerState, events: GameEvent[]): void {
       type: GAME_EVENT_TYPE.UNIT_DIED,
       unitInstanceId: card.instanceId,
     })
+    notifyAllyDeath(state, events, card)
   }
 }
 
@@ -227,17 +241,12 @@ function alternateInitiative(state: GameState): void {
 
 function runDrawPhase(state: GameState, events: GameEvent[]): void {
   for (const playerId in state.players) {
-    const player = state.players[playerId]!
+    refreshEnergy(state.players[playerId]!, playerId, events)
+    drawCard(state, playerId, events)
 
-    refreshEnergy(player, playerId, events)
-
-    if (player.deck.length === 0) {
-      endGameOnEmptyDeck(state, playerId, events)
-
+    if (state.winnerPlayerId !== null) {
       return
     }
-
-    drawTopCard(player, playerId, events)
   }
 }
 
@@ -262,27 +271,4 @@ function refreshEnergy(player: PlayerState, playerId: string, events: GameEvent[
       isReserved: true,
     },
   )
-}
-
-function endGameOnEmptyDeck(state: GameState, playerId: string, events: GameEvent[]): void {
-  const opponentId = Object.keys(state.players).find((id) => id !== playerId)!
-
-  state.winnerPlayerId = opponentId
-  events.push({ type: GAME_EVENT_TYPE.GAME_OVER, winnerPlayerId: opponentId })
-}
-
-function drawTopCard(player: PlayerState, playerId: string, events: GameEvent[]): void {
-  const drawnCard = player.deck.shift()!
-
-  if (player.hand.length < MAX_CARDS_IN_HAND) {
-    player.hand.push(drawnCard)
-  } else {
-    player.graveyard.push(drawnCard)
-  }
-
-  events.push({
-    type: GAME_EVENT_TYPE.CARD_DRAWN,
-    playerId,
-    cardInstanceId: drawnCard.instanceId,
-  })
 }

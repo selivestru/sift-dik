@@ -75,7 +75,7 @@ describe('Spell speed: Slow', () => {
       playerId: p1Id,
       cardInstanceId: p2Pass.players[p1Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_SLOW)!
         .instanceId,
-      targetUnitInstanceId: targetUnit.instanceId,
+      targets: [targetUnit.instanceId],
     })
 
     expect(castResult.state.spellStack).toHaveLength(1)
@@ -133,7 +133,7 @@ describe('Spell speed: Slow', () => {
       playerId: p2Id,
       cardInstanceId: state.players[p2Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_STUN)!
         .instanceId,
-      targetUnitInstanceId: targetUnit.instanceId,
+      targets: [targetUnit.instanceId],
     }).state
 
     expect(() => {
@@ -142,7 +142,7 @@ describe('Spell speed: Slow', () => {
         playerId: p1Id,
         cardInstanceId: stackState.players[p1Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_SLOW)!
           .instanceId,
-        targetUnitInstanceId: targetUnit.instanceId,
+        targets: [targetUnit.instanceId],
       })
     }).toThrow('Cannot play slow spell while other spells are on the stack')
   })
@@ -156,7 +156,7 @@ describe('Spell speed: Slow', () => {
       playerId: p2Id,
       cardInstanceId: state.players[p2Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_STUN)!
         .instanceId,
-      targetUnitInstanceId: targetUnit.instanceId,
+      targets: [targetUnit.instanceId],
     }).state
 
     const unitInHand = stackState.players[p1Id]!.hand.find((c) => c.id === 'unit-template')!

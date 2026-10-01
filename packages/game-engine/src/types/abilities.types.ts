@@ -11,6 +11,7 @@ export const TRIGGER = {
   ON_REPUTATION_STRIKE: 'on_reputation_strike',
   ON_KILL: 'on_kill',
   ON_DEATH: 'on_death',
+  ON_ALLY_DEATH: 'on_ally_death',
   ON_ROUND_START: 'on_round_start',
   ON_ROUND_END: 'on_round_end',
 } as const
@@ -19,7 +20,14 @@ export type TriggerType = (typeof TRIGGER)[keyof typeof TRIGGER]
 
 export const ABILITY = {
   TREMOLO_PATH: 'tremolo_path',
-  SUPPORT: 'support',
+  TREMOLO_SUPPORT: 'tremolo_support',
+  DEREK_SEARCH: 'derek_search',
+  DEREK_BROTHERHOOD: 'derek_brotherhood',
+  DEREK_REVENGE: 'derek_revenge',
+  MAYA_SEARCH: 'maya_search',
+  MAYA_SUPPORT: 'maya_support',
+  MAYA_VENGEANCE: 'maya_vengeance',
+  JOSY_DRAW: 'josy_draw',
 } as const
 
 export type AbilityType = (typeof ABILITY)[keyof typeof ABILITY]
@@ -36,9 +44,20 @@ export interface SupportAbilityContext extends AbilityContext {
   targetUnit?: UnitCardInstance
 }
 
+export interface AllyDeathAbilityContext extends AbilityContext {
+  deadUnit: UnitCardInstance
+}
+
 export interface AbilityContextMap {
   tremolo_path: TremoloPathAbilityContext
-  support: SupportAbilityContext
+  tremolo_support: SupportAbilityContext
+  derek_search: AbilityContext
+  derek_brotherhood: AbilityContext
+  derek_revenge: AllyDeathAbilityContext
+  maya_search: AbilityContext
+  maya_support: SupportAbilityContext
+  maya_vengeance: AllyDeathAbilityContext
+  josy_draw: AbilityContext
 }
 
 export type AbilityPayload<C extends AbilityContext> = Omit<C, keyof AbilityContext>

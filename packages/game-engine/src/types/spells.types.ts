@@ -11,6 +11,9 @@ export const SPELL_TYPES = {
   TEMP_STUN: 'temp-stun',
   TEMP_BURST: 'temp-burst',
   TEMP_SLOW: 'temp-slow',
+  BROTHERS_SHOULDER: 'brothers-shoulder',
+  ALWAYS_AND_FOREVER: 'always-and-forever',
+  LOW_BLOW: 'low-blow',
 } as const
 
 export type SpellType = (typeof SPELL_TYPES)[keyof typeof SPELL_TYPES]

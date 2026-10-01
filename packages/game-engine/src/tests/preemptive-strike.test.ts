@@ -71,7 +71,7 @@ describe('Spell: Preemptive Strike', () => {
       type: GAME_ACTION_TYPE.PLAY_SPELL,
       playerId: p2Id,
       cardInstanceId: spellCardInHand.instanceId,
-      targetUnitInstanceId: targetUnitOnBoard.instanceId,
+      targets: [targetUnitOnBoard.instanceId],
     })
 
     // Cost paid: 2 from reserved energy, 1 from base energy

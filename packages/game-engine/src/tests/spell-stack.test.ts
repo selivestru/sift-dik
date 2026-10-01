@@ -68,7 +68,7 @@ describe('Spell stack resolution', () => {
       playerId: p2Id,
       cardInstanceId: afterP1Play.players[p2Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_STUN)!
         .instanceId,
-      targetUnitInstanceId: targetInstanceId,
+      targets: [targetInstanceId],
     }).state
 
     const psCast = applyAction(stunCast, {
@@ -77,7 +77,7 @@ describe('Spell stack resolution', () => {
       cardInstanceId: stunCast.players[p1Id]!.hand.find(
         (c) => c.id === SPELL_TYPES.PREEMPTIVE_STRIKE,
       )!.instanceId,
-      targetUnitInstanceId: targetInstanceId,
+      targets: [targetInstanceId],
     }).state
 
     expect(psCast.spellStack).toHaveLength(2)

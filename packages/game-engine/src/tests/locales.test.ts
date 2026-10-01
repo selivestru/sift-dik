@@ -53,14 +53,21 @@ describe('Locales', () => {
     'neutral_path',
     'chick_path',
     'support',
+    'reputation_strike',
   ]
 
   const cardIds: CardId[] = [
     CHARACTERS.TREMOLO,
+    CHARACTERS.DEREK,
+    CHARACTERS.MAYA,
+    CHARACTERS.JOSY,
     SPELL_TYPES.PREEMPTIVE_STRIKE,
     SPELL_TYPES.TEMP_STUN,
     SPELL_TYPES.TEMP_BURST,
     SPELL_TYPES.TEMP_SLOW,
+    SPELL_TYPES.BROTHERS_SHOULDER,
+    SPELL_TYPES.ALWAYS_AND_FOREVER,
+    SPELL_TYPES.LOW_BLOW,
   ]
 
   test('Every locale provides strings for every card and term', () => {

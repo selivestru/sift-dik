@@ -1,4 +1,4 @@
-import type { GameEvent, GameState } from '../../../types'
+import { KEYWORD, type GameEvent, type GameState } from '../../../types'
 import type { SpellContext } from '../../../types/spells.types'
 
 const findUnit = (state: GameState, unitId: string) => {
@@ -10,7 +10,7 @@ const findUnit = (state: GameState, unitId: string) => {
   return [...boardUnits, ...combatUnits].find((unit) => unit?.instanceId === unitId)
 }
 
-export const handleTempBurst = (
+export const handleAlwaysAndForever = (
   state: GameState,
   _events: GameEvent[],
   { spellItem }: SpellContext,
@@ -23,6 +23,11 @@ export const handleTempBurst = (
 
   if (!target) return
 
-  target.attack += 1
-  target.tempAttack = (target.tempAttack ?? 0) + 1
+  if (!target.keywords) {
+    target.keywords = []
+  }
+
+  if (!target.keywords.includes(KEYWORD.BARRIER)) {
+    target.keywords.push(KEYWORD.BARRIER)
+  }
 }

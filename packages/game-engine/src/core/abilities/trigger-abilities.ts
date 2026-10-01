@@ -1,9 +1,10 @@
 import type { GameEvent, GameState, UnitCardInstance } from '../../types'
-import type {
-  AbilityContext,
-  AbilityContextInput,
-  AbilityHandler,
-  TriggerType,
+import {
+  TRIGGER,
+  type AbilityContext,
+  type AbilityContextInput,
+  type AbilityHandler,
+  type TriggerType,
 } from '../../types/abilities.types'
 import { ABILITIES } from './registry'
 
@@ -24,5 +25,31 @@ export const triggerUnitAbilities = <C extends AbilityContext>(
       const payload = abilityContexts?.[abilityId] ?? {}
       handler.execute(state, events, { ...baseContext, ...payload })
     }
+  }
+}
+
+export const notifyAllyDeath = (
+  state: GameState,
+  events: GameEvent[],
+  deadUnit: UnitCardInstance,
+): void => {
+  const alliedUnits = [
+    ...state.players[deadUnit.ownerId]!.board,
+    ...(state.combat
+      ? state.combat.slots.flatMap((slot) => [slot.attacker, slot.blocker].filter(Boolean))
+      : []),
+  ].filter(
+    (unit): unit is UnitCardInstance =>
+      unit !== null &&
+      unit.ownerId === deadUnit.ownerId &&
+      unit.instanceId !== deadUnit.instanceId &&
+      unit.health > 0,
+  )
+
+  for (const ally of alliedUnits) {
+    triggerUnitAbilities(state, events, ally, TRIGGER.ON_ALLY_DEATH, {
+      sourceUnit: ally,
+      deadUnit,
+    })
   }
 }

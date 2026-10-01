@@ -24,12 +24,12 @@ export const playSpellAction = (state: GameState, action: PlaySpellAction): Appl
   if (spellCard.speed === SPELL_SPEED.BURST) {
     resolveSpellItem(nextState, events, {
       spell: spellCard,
-      targetUnitInstanceId: action.targetUnitInstanceId,
+      targets: action.targets,
     })
   } else {
     nextState.spellStack.push({
       spell: spellCard,
-      targetUnitInstanceId: action.targetUnitInstanceId,
+      targets: action.targets,
     })
     nextState.turnPlayerId = getNextPlayerId(nextState)
   }
@@ -82,24 +82,28 @@ function validatePlaySpellAction(state: GameState, action: PlaySpellAction): Spe
     )
   }
 
-  if (action.targetUnitInstanceId) {
-    const allBoardUnits = Object.values(state.players).flatMap((p) => p.board)
-    const combatUnits = state.combat
-      ? state.combat.slots.flatMap((s) => [s.attacker, s.blocker].filter(Boolean))
-      : []
-
-    const targetExists = [...allBoardUnits, ...combatUnits].some(
-      (unit) => unit?.instanceId === action.targetUnitInstanceId,
-    )
-
-    if (!targetExists) {
-      throw new Error(
-        `Target unit with instance ID "${action.targetUnitInstanceId}" not found on board or in combat`,
-      )
-    }
+  for (const targetId of action.targets ?? []) {
+    validateTargetExists(state, targetId)
   }
 
   return spellCard
+}
+
+function validateTargetExists(state: GameState, targetUnitInstanceId: string): void {
+  const allBoardUnits = Object.values(state.players).flatMap((p) => p.board)
+  const combatUnits = state.combat
+    ? state.combat.slots.flatMap((s) => [s.attacker, s.blocker].filter(Boolean))
+    : []
+
+  const targetExists = [...allBoardUnits, ...combatUnits].some(
+    (unit) => unit?.instanceId === targetUnitInstanceId,
+  )
+
+  if (!targetExists) {
+    throw new Error(
+      `Target unit with instance ID "${targetUnitInstanceId}" not found on board or in combat`,
+    )
+  }
 }
 
 function spendSpellCost(

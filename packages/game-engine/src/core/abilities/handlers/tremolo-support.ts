@@ -1,7 +1,7 @@
 import type { GameEvent, GameState } from '../../../types'
 import type { SupportAbilityContext } from '../../../types/abilities.types'
 
-export const handleSupport = (
+export const handleTremoloSupport = (
   state: GameState,
   _events: GameEvent[],
   context: SupportAbilityContext,

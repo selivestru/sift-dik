@@ -21,6 +21,7 @@ export interface BaseCard {
   faction: CardFaction
   baseCost: number
   cost: number
+  tempCost?: number
 }
 
 export const KEYWORD = {

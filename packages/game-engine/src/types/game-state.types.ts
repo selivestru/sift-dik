@@ -27,7 +27,7 @@ export interface CombatState {
 
 export interface StackSpell {
   spell: SpellCardInstance
-  targetUnitInstanceId?: string
+  targets?: string[]
 }
 
 export interface GameState {

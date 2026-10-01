@@ -170,8 +170,7 @@ describe('Keyword: Stunned', () => {
       playerId: p2Id,
       cardInstanceId: afterP1Play.players[p2Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_STUN)!
         .instanceId,
-      targetUnitInstanceId: afterP1Play.players[p1Id]!.board.find((u) => u.id === 'target-unit')!
-        .instanceId,
+      targets: [afterP1Play.players[p1Id]!.board.find((u) => u.id === 'target-unit')!.instanceId],
     })
 
     expect(spellResult.state.spellStack).toHaveLength(1)
@@ -269,7 +268,7 @@ describe('Keyword: Stunned', () => {
       playerId: p1Id,
       cardInstanceId: attackState.players[p1Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_STUN)!
         .instanceId,
-      targetUnitInstanceId: attackerOnBoard.instanceId,
+      targets: [attackerOnBoard.instanceId],
     })
 
     expect(spellResult.state.spellStack[0]!.spell.id).toBe(SPELL_TYPES.TEMP_STUN)
@@ -381,7 +380,7 @@ describe('Keyword: Stunned', () => {
       playerId: p2Id,
       cardInstanceId: blockState.players[p2Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_STUN)!
         .instanceId,
-      targetUnitInstanceId: blockerOnBoard.instanceId,
+      targets: [blockerOnBoard.instanceId],
     })
 
     const declinePass = applyAction(spellResult.state, {
@@ -464,7 +463,7 @@ describe('Keyword: Stunned', () => {
       playerId: p2Id,
       cardInstanceId: afterP1Play.players[p2Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_STUN)!
         .instanceId,
-      targetUnitInstanceId: targetInstanceId,
+      targets: [targetInstanceId],
     }).state
 
     const firstDeclinePass = applyAction(firstCast, {
@@ -488,7 +487,7 @@ describe('Keyword: Stunned', () => {
       playerId: p2Id,
       cardInstanceId: priorityPass.players[p2Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_STUN)!
         .instanceId,
-      targetUnitInstanceId: targetInstanceId,
+      targets: [targetInstanceId],
     }).state
 
     const secondDeclinePass = applyAction(secondCast, {

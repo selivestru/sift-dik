@@ -45,7 +45,7 @@ export interface PlaySpellAction {
   type: typeof GAME_ACTION_TYPE.PLAY_SPELL
   playerId: string
   cardInstanceId: string
-  targetUnitInstanceId?: string
+  targets?: string[]
 }
 
 export type GameAction =

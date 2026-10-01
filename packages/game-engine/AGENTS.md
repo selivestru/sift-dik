@@ -87,7 +87,7 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
 3. **`lifesteal` (`src/tests/lifesteal.test.ts`):** Restores allied player Reputation by amount of damage dealt in attack and defense (capped at `MAX_REPUTATION = 20`).
 4. **`regeneration` (`src/tests/regeneration.test.ts`):** Fully heals damaged unit to `maxHealth` at round end on `player.board`.
 5. **`tough` (`src/tests/tough.test.ts`):** Reduces all incoming damage to unit by 1 (minimum 0).
-6. **`overwhelm` (`src/tests/overwhelm.test.ts`):** Excess attack damage above blocker lethal threshold (accounting for Tough) carries over to defender player's Reputation.
+6. **`overwhelm` / Пробивание (`src/tests/overwhelm.test.ts`):** Excess attack damage above blocker lethal threshold (accounting for Tough) carries over to defender player's Reputation.
 7. **`cannot_attack` (`src/tests/cannot-attack.test.ts`):** Unit is rejected from being declared in `DECLARE_ATTACKS`.
 8. **`cannot_block` (`src/tests/cannot-block.test.ts`):** Unit is rejected from being declared in `DECLARE_BLOCKS`.
 9. **`impulse` (`src/tests/impulse.test.ts`):** Grants +1 Reserved Energy (cap 3) upon summon (`PLAY_UNIT`).
@@ -105,6 +105,7 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
 
 ### Layer 1: Spells & Spell Stack System (COMPLETED)
 
+- **Targeting convention:** spell targets are passed positionally in `PlaySpellAction.targets?: string[]` and mirrored on `StackSpell`; the action validates that every entry exists on a board or in combat, and each spell's handler defines the meaning of each position (e.g. Brother's Shoulder: `targets[0]` = own unit to damage, `targets[1]` = ally to buff).
 - **Action:** `PLAY_SPELL` (`src/core/actions/play-spell-action.ts`):
   - Validates turn, hand presence, card type, target presence, energy availability, and slow spell restrictions: `slow` requires empty stack AND no active combat (slow is never a reaction); playing units follows the same slow-speed rules (`play-unit-action.ts` rejects units while spells are on the stack or during combat).
   - **Spell Mana Banking:** Spends `reservedEnergy` first, then spills over into base `energy`.
@@ -118,7 +119,7 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
 ### Layer 1: Triggered Abilities & Card Registry (COMPLETED)
 
 - **Abilities Architecture:**
-  - `src/types/abilities.types.ts`: Trigger types (`ON_SUMMON`, `ON_ATTACK`, `ON_REPUTATION_STRIKE`, `ON_KILL`, `ON_DEATH`, `ON_ROUND_START`, `ON_ROUND_END`) and handler signatures.
+  - `src/types/abilities.types.ts`: Trigger types (`ON_SUMMON`, `ON_ATTACK`, `ON_REPUTATION_STRIKE`, `ON_KILL`, `ON_DEATH`, `ON_ALLY_DEATH`, `ON_ROUND_START`, `ON_ROUND_END`) and handler signatures. `ON_ALLY_DEATH` is dispatched via `notifyAllyDeath` (`trigger-abilities.ts`) at every death site: combat cleanup, ephemeral round-end purge, `applyDamageToUnit` deaths.
   - **Per-ability typed contexts:** `AbilityHandler<C extends AbilityContext>` is generic; each ability declares its own context in `AbilityContextMap` (e.g. `TremoloPathAbilityContext` requires `chosenPath`). The registry is typed as `AbilityHandlerMap = { [K in AbilityType]: AbilityHandler<AbilityContextMap[K]> }`, so a new ability must declare its context and handler or compilation fails. The only cast lives in the dispatcher (`trigger-abilities.ts`), which cannot statically correlate a runtime `abilityId` with its context.
   - **Ability-agnostic actions:** player actions never carry ability-specific fields. `PlayUnitAction.abilityContexts?: AbilityContextInput` is keyed by ability id and typed via `AbilityContextMap`; the dispatcher merges the engine-provided base context with the per-ability payload. Each ability owns its payload validation through an optional Zod schema (`payloadSchema`, typed as `ZodType<AbilityPayload<C>>` so the schema output must match the ability context) in its registry entry; `play-unit-action.ts` parses payloads with it before any state mutation and passes the parsed result downstream. Abilities without player input simply omit it.
   - `src/core/abilities/trigger-abilities.ts`: Universal ability dispatcher.
@@ -129,7 +130,7 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
     - _Choose Path (`TREMOLO_PATH`, ON_SUMMON):_ `PlayUnitAction` carries `abilityContexts.tremolo_path.chosenPath` (`dik` / `neutral` / `chick`, see `src/constants/characters.ts`); payload validated by the Zod schema `tremoloPathPayloadSchema` in `play-unit-action.ts` before state changes.
     - _DIK path:_ permanent +1|+0 and `quick_attack`.
     - _Neutral path:_ permanent −1 attack (floor 0), `elusive`, restores 1 Reserved Energy (cap 3).
-    - _CHICK path:_ permanent `tough`, grants the `SUPPORT` ability (ON_ATTACK: the attacking ally to his right gets +1|+1 for the round).
+    - _CHICK path:_ permanent `tough`, grants his `Tremolo Support` ability (ON_ATTACK: the attacking ally to his right gets +1|+1 for the round).
     - _Test:_ `src/tests/tremolo.test.ts`.
   - **Preemptive Strike (`src/catalog/spells/preemptive-strike.ts`):**
     - Fast spell, Cost 3.
@@ -150,6 +151,28 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
     - Slow spell, Cost 2. Gives an ally +1|+1 permanently.
     - Handler: `src/core/spells/handlers/temp-slow.ts`.
     - _Test:_ `src/tests/slow-speed.test.ts`.
+  - **Derek (`src/catalog/characters/derek.ts`):** DIKs, Cost 2, 2|3.
+    - _Search (ON_SUMMON):_ take Maya from your deck into your hand (silent no-op if absent).
+    - _Brotherhood (ON_ATTACK):_ if attacking alongside Tremolo, both gain +1|+1 this round (stacks across multiple Dereks).
+    - _Revenge (ON_ALLY_DEATH):_ if allied Maya dies, permanently gains +2|+2 and `overwhelm`.
+    - _Test:_ `src/tests/derek.test.ts`.
+  - **Maya (`src/catalog/characters/maya.ts`):** HOTs, Cost 2, 1|3.
+    - _Search (ON_SUMMON):_ take Derek from your deck into your hand (silent no-op if absent).
+    - _Maya Support (ON_ATTACK):_ grants the ally to the right +1|+1 this round; +2|+2 instead when the supported ally is Josy or Tremolo.
+    - _Vengeance (ON_ALLY_DEATH):_ if allied Derek dies, the strongest enemy unit (attack; ties → slots-then-board order) permanently gains `vulnerable`.
+    - _Test:_ `src/tests/maya.test.ts`.
+  - **Josy (`src/catalog/characters/josy.ts`):** HOTs, Cost 2, 1|2, `elusive`.
+    - _Draw (ON_REPUTATION_STRIKE):_ draw 1 card (empty deck = defeat); if the drawn card is HOTs/DIKs faction, its cost is reduced by 1 this round via `tempCost` (restored at round end for hand and board cards).
+    - _Test:_ `src/tests/josy.test.ts`.
+  - **Brother's Shoulder (`src/catalog/spells/brothers-shoulder.ts`):**
+    - Burst spell, Cost 2. Two targets: deals 1 damage to your own unit (via `applyDamageToUnit`) and grants an ally +2|+1 this round.
+    - _Test:_ `src/tests/derek.test.ts`.
+  - **Always and Forever (`src/catalog/spells/always-and-forever.ts`):**
+    - Burst spell, Cost 2. Grants an ally `barrier` (expires at round end if unconsumed).
+    - _Test:_ `src/tests/maya.test.ts`.
+  - **Low Blow (`src/catalog/spells/low-blow.ts`):**
+    - Slow spell, Cost 4. Deals 4 damage to a chosen enemy unit (via `applyDamageToUnit`) and applies `stunned` to it if it survives.
+    - _Test:_ `src/tests/josy.test.ts`.
 
 ### Layer 1: Localization & Interactive Descriptions (COMPLETED)
 - **Architecture:** the engine and `GameState` stay locale-agnostic; localized strings live in the `src/locales/` layer and are resolved by card id on the client.
@@ -166,7 +189,7 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
 ```text
 src/
 ├── catalog/                          # Card templates & definitions
-│   ├── characters/                   # Character unit cards (e.g. tremolo.ts)
+│   ├── characters/                   # Character unit cards (tremolo, derek, maya, josy)
 │   └── spells/                       # Spell cards (e.g. preemptive-strike.ts, temp-stun.ts, temp-burst.ts, temp-slow.ts)
 ├── constants/
 │   ├── characters.ts                 # Character card ids (CHARACTERS) & Tremolo paths (TREMOLO_PATH)
@@ -202,12 +225,13 @@ src/
 │   │   └── play-unit-action.ts       # Decomposed unit summon coordinator
 │   ├── apply-action.ts               # Central action dispatcher
 │   └── create-game.ts                # Deterministic game initialization
-├── tests/                            # Vitest suites (1 test file per mechanic, 28 files total)
+├── tests/                            # Vitest suites (1 test file per mechanic, 31 files total)
 │   ├── barrier.test.ts
 │   ├── burst-speed.test.ts
 │   ├── cannot-attack.test.ts
 │   ├── cannot-block.test.ts
 │   ├── challenger.test.ts
+│   ├── derek.test.ts
 │   ├── combat-reaction.test.ts
 │   ├── double-attack.test.ts
 │   ├── elusive.test.ts
@@ -217,8 +241,10 @@ src/
 │   ├── game-loop.test.ts
 │   ├── impulse.test.ts
 │   ├── invulnerable.test.ts
+│   ├── josy.test.ts
 │   ├── lifesteal.test.ts
 │   ├── locales.test.ts
+│   ├── maya.test.ts
 │   ├── overwhelm.test.ts
 │   ├── preemptive-strike.test.ts
 │   ├── pressure.test.ts

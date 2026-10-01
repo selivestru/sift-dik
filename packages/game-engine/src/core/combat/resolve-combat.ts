@@ -8,7 +8,7 @@ import {
   type UnitCardInstance,
 } from '../../types'
 import { TRIGGER } from '../../types/abilities.types'
-import { triggerUnitAbilities } from '../abilities/trigger-abilities'
+import { notifyAllyDeath, triggerUnitAbilities } from '../abilities/trigger-abilities'
 
 export const resolveCombat = (state: GameState, events: GameEvent[]): void => {
   const attackerPlayer = state.players[state.combat!.attackerPlayerId]!
@@ -25,6 +25,47 @@ export const resolveCombat = (state: GameState, events: GameEvent[]): void => {
       break
     }
   }
+}
+
+export const applyDamageToUnit = (
+  state: GameState,
+  events: GameEvent[],
+  unit: UnitCardInstance,
+  amount: number,
+): void => {
+  const damage = calculateDamage(amount, unit)
+
+  unit.health -= damage
+
+  events.push({
+    type: GAME_EVENT_TYPE.DAMAGE_DEALT,
+    targetId: unit.instanceId,
+    amount: damage,
+    isReputation: false,
+  })
+
+  if (unit.health > 0) return
+
+  const slot = state.combat?.slots.find(
+    (s) => s.attacker.instanceId === unit.instanceId || s.blocker?.instanceId === unit.instanceId,
+  )
+
+  if (slot) {
+    if (slot.attacker.instanceId === unit.instanceId) {
+      state.combat!.slots = state.combat!.slots.filter(
+        (s) => s.attacker.instanceId !== unit.instanceId,
+      )
+    } else {
+      slot.blocker = null
+    }
+  }
+
+  const owner = state.players[unit.ownerId]!
+  owner.board = owner.board.filter((boardUnit) => boardUnit.instanceId !== unit.instanceId)
+  owner.graveyard.push(unit)
+
+  events.push({ type: GAME_EVENT_TYPE.UNIT_DIED, unitInstanceId: unit.instanceId })
+  notifyAllyDeath(state, events, unit)
 }
 
 function resolveBlockedCombat(
@@ -235,7 +276,7 @@ function applyCombatCleanup(
 }
 
 function handlePostCombatZonePlacement(
-  _state: GameState,
+  state: GameState,
   events: GameEvent[],
   unit: UnitCardInstance,
   player: PlayerState,
@@ -246,6 +287,7 @@ function handlePostCombatZonePlacement(
   if (dies) {
     player.graveyard.push(unit)
     events.push({ type: GAME_EVENT_TYPE.UNIT_DIED, unitInstanceId: unit.instanceId })
+    notifyAllyDeath(state, events, unit)
   } else {
     player.board.push(unit)
   }

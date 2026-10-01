@@ -27,6 +27,37 @@ export const en: Locale = {
       name: 'Pep Talk',
       description: 'Give an ally +1|+1.',
     },
+    [CHARACTERS.DEREK]: {
+      name: 'Derek',
+      description:
+        '{summon}: Take Maya from your deck into your hand. ' +
+        'Attack: If I attack alongside Tremolo, we both gain +1|+1 this round. ' +
+        'Ally death: If an allied Maya dies in my sight, grant me +2|+2 and {overwhelm}.',
+    },
+    [CHARACTERS.MAYA]: {
+      name: 'Maya',
+      description:
+        '{summon}: Take Derek from your deck into your hand. ' +
+        '{support}: Grant the supported ally +1|+1 this round. If it is Josy or Tremolo, grant them +2|+2 instead. ' +
+        'Ally death: If allied Derek dies, the strongest enemy unit gains {vulnerable}.',
+    },
+    [CHARACTERS.JOSY]: {
+      name: 'Josy',
+      description:
+        '{elusive}. {reputation_strike}: Draw 1 card. If it is a HOTs or DIKs faction card, reduce its cost by 1 this round.',
+    },
+    [SPELL_TYPES.BROTHERS_SHOULDER]: {
+      name: "Brother's Shoulder",
+      description: 'Deal 1 damage to your own unit to grant an ally +2|+1 this round.',
+    },
+    [SPELL_TYPES.ALWAYS_AND_FOREVER]: {
+      name: 'Always and Forever',
+      description: 'Grant an ally {barrier}.',
+    },
+    [SPELL_TYPES.LOW_BLOW]: {
+      name: 'Low Blow',
+      description: 'Deal 4 damage to a chosen enemy unit and apply {stunned} to the target.',
+    },
   },
   terms: {
     summon: {
@@ -133,6 +164,10 @@ export const en: Locale = {
     stunned: {
       name: 'Stun',
       rules: "A stunned unit is removed from combat and can't attack or block this round.",
+    },
+    reputation_strike: {
+      name: 'Strike the Nexus',
+      rules: 'Triggers when this unit deals damage to the enemy Reputation.',
     },
     challenger: {
       name: 'Challenger',
