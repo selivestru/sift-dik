@@ -85,10 +85,15 @@ describe('Spell: Preemptive Strike', () => {
     // Turn passed to P1 to react
     expect(spellResult.state.turnPlayerId).toBe(p1Id)
 
-    // Step 3: P1 passes -> Spell stack resolves!
-    const passResult = applyAction(spellResult.state, {
+    // Step 3: P1 passes, P2 passes -> Spell stack resolves!
+    const p1Pass = applyAction(spellResult.state, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: p1Id,
+    }).state
+
+    const passResult = applyAction(p1Pass, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: p1Pass.turnPlayerId,
     })
 
     // Stack is empty, spell moved to graveyard

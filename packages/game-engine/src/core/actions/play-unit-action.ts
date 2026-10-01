@@ -56,6 +56,10 @@ function validatePlayUnitAction(state: GameState, action: PlayUnitAction): UnitC
     throw new Error('Cannot play unit: combat is currently in progress')
   }
 
+  if (state.spellStack.length > 0) {
+    throw new Error('Cannot play unit while spells are on the stack')
+  }
+
   const playerState = state.players[action.playerId]
   if (!playerState) {
     throw new Error(`Player with ID "${action.playerId}" not found`)

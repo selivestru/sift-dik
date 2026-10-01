@@ -73,11 +73,25 @@ describe('Keyword: Regeneration', () => {
       attackers: [attackingUnitId],
     }).state
 
-    const combatState = applyAction(attackState, {
+    const blockResult = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: defenderId,
       blocks: [{ attackerInstanceId: attackingUnitId, defenderInstanceId: defendingUnitId }],
+    })
+
+    // Both players pass consecutively to resolve the combat strikes
+    const strikePass = applyAction(blockResult.state, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: blockResult.state.turnPlayerId,
     }).state
+
+    const combatState = applyAction(strikePass, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: strikePass.turnPlayerId,
+    }).state
+
+    // Combat passes resolve strikes but do not advance the round
+    expect(combatState.round).toBe(1)
 
     // Regen unit took 1 damage in combat -> 3 - 1 = 2 HP
     expect(combatState.players[attackerId]!.board[0]!.health).toBe(2)

@@ -15,6 +15,18 @@ export const ru: Locale = {
       name: 'Удар на опережение',
       description: 'Даруйте союзнику +2|+1 и {quick_attack} до конца раунда.',
     },
+    [SPELL_TYPES.TEMP_STUN]: {
+      name: 'Оглушение',
+      description: 'Оглушите врага в этом раунде. {stunned}',
+    },
+    [SPELL_TYPES.TEMP_BURST]: {
+      name: 'Прилив энергии',
+      description: 'Даруйте союзнику +1|+0 до конца раунда.',
+    },
+    [SPELL_TYPES.TEMP_SLOW]: {
+      name: 'Подбадривание',
+      description: 'Даруйте союзнику +1|+1.',
+    },
   },
   terms: {
     summon: {
@@ -117,6 +129,10 @@ export const ru: Locale = {
     barrier: {
       name: 'Барьер',
       rules: 'Полностью поглощает следующий входящий урон больше 0 и расходуется.',
+    },
+    stunned: {
+      name: 'Оглушение',
+      rules: 'Оглушённый боец удаляется из боя и не может атаковать или блокировать в этом раунде.',
     },
   },
 }

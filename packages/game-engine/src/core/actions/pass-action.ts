@@ -6,29 +6,23 @@ import {
   type GameEvent,
   type GameState,
   type PassAction,
+  type PlayerState,
+  type UnitCardInstance,
 } from '../../types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
 import type { ApplyActionResult } from '../apply-action'
-import { resolveSpellStack } from '../spells/resolve-spell-stack'
+import { resolveCombat } from '../combat/resolve-combat'
+import { resolveSpellItem } from '../spells/resolve-spell-stack'
 
 export const passAction = (state: GameState, action: PassAction): ApplyActionResult => {
   const nextState = structuredClone(state)
 
-  if (nextState.winnerPlayerId !== null) {
-    throw new Error(`Game has already ended. Winner: ${nextState.winnerPlayerId}`)
-  }
-
-  if (nextState.turnPlayerId !== action.playerId) {
-    throw new Error(`It is not player "${action.playerId}" turn to pass`)
-  }
+  validatePassAction(nextState, action)
 
   const events: GameEvent[] = []
 
   if (nextState.spellStack.length > 0) {
-    resolveSpellStack(nextState, events)
-
-    nextState.consecutivePasses = 0
-    nextState.turnPlayerId = getNextPlayerId(nextState)
+    passSpellStackPriority(nextState, events)
 
     return {
       state: nextState,
@@ -37,156 +31,7 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
   }
 
   if (nextState.combat !== null) {
-    throw new Error('Cannot pass while combat is in progress. Declare blocks instead')
-  }
-
-  nextState.consecutivePasses += 1
-
-  if (nextState.consecutivePasses === 2) {
-    events.push({ type: GAME_EVENT_TYPE.ROUND_ENDED, round: nextState.round })
-
-    for (const playerId in nextState.players) {
-      const player = nextState.players[playerId]!
-
-      // 1. Discard fleeting cards from hand
-      const fleetingCards = player.hand.filter((card) => card.keywords?.includes(KEYWORD.FLEETING))
-
-      if (fleetingCards.length > 0) {
-        const fleetingIds = new Set(fleetingCards.map((c) => c.instanceId))
-        player.hand = player.hand.filter((c) => !fleetingIds.has(c.instanceId))
-        player.graveyard.push(...fleetingCards)
-
-        for (const card of fleetingCards) {
-          events.push({
-            type: GAME_EVENT_TYPE.CARD_DISCARDED,
-            playerId: player.id,
-            cardInstanceId: card.instanceId,
-          })
-        }
-      }
-
-      const ephemeralUnits = player.board.filter((card) =>
-        card.keywords?.includes(KEYWORD.EPHEMERAL),
-      )
-
-      if (ephemeralUnits.length > 0) {
-        const ephemeralIds = new Set(ephemeralUnits.map((c) => c.instanceId))
-        player.board = player.board.filter((c) => !ephemeralIds.has(c.instanceId))
-        player.graveyard.push(...ephemeralUnits)
-
-        for (const card of ephemeralUnits) {
-          events.push({
-            type: GAME_EVENT_TYPE.UNIT_DIED,
-            unitInstanceId: card.instanceId,
-          })
-        }
-      }
-
-      for (const card of player.board) {
-        if (card.type !== CARD_TYPE.UNIT) continue
-
-        if (card.tempAttack) {
-          card.attack = Math.max(0, card.attack - card.tempAttack)
-          card.tempAttack = 0
-        }
-
-        if (card.tempHealth) {
-          card.health = Math.max(1, card.health - card.tempHealth)
-          card.maxHealth = Math.max(1, card.maxHealth - card.tempHealth)
-          card.tempHealth = 0
-        }
-
-        if (card.tempKeywords && card.tempKeywords.length > 0) {
-          const tempSet = new Set(card.tempKeywords)
-          card.keywords = card.keywords?.filter((k) => !tempSet.has(k))
-          card.tempKeywords = []
-        }
-
-        if (card.keywords?.includes(KEYWORD.BARRIER)) {
-          card.keywords = card.keywords.filter((k) => k !== KEYWORD.BARRIER)
-        }
-
-        const hasRegeneration = card.keywords?.includes(KEYWORD.REGENERATION)
-
-        if (!hasRegeneration) continue
-        if (card.health >= card.maxHealth) continue
-
-        const delta = card.maxHealth - card.health
-
-        card.health = card.maxHealth
-
-        events.push({
-          type: GAME_EVENT_TYPE.HEAL_DEALT,
-          targetId: card.instanceId,
-          amount: delta,
-          isReputation: false,
-        })
-      }
-    }
-
-    nextState.round += 1
-
-    const prevInitiativeId = nextState.initiativePlayerId
-    const nextInitiativeId = Object.keys(nextState.players).find((id) => id !== prevInitiativeId)!
-
-    nextState.initiativePlayerId = nextInitiativeId
-    nextState.turnPlayerId = nextInitiativeId
-
-    nextState.players[nextInitiativeId]!.hasAttackToken = true
-    nextState.players[prevInitiativeId]!.hasAttackToken = false
-
-    events.push({
-      type: GAME_EVENT_TYPE.ROUND_STARTED,
-      initiativePlayerId: nextState.initiativePlayerId,
-      round: nextState.round,
-    })
-
-    for (const playerId in nextState.players) {
-      const player = nextState.players[playerId]!
-      const leftover = player.energy
-
-      player.maxEnergy = Math.min(10, player.maxEnergy + 1)
-      player.energy = player.maxEnergy
-      player.reservedEnergy = Math.min(3, player.reservedEnergy + leftover)
-
-      events.push(
-        {
-          type: GAME_EVENT_TYPE.ENERGY_CHANGED,
-          playerId,
-          energy: player.energy,
-          isReserved: false,
-        },
-        {
-          type: GAME_EVENT_TYPE.ENERGY_CHANGED,
-          playerId,
-          energy: player.reservedEnergy,
-          isReserved: true,
-        },
-      )
-
-      if (player.deck.length === 0) {
-        const opponentId = Object.keys(nextState.players).find((id) => id !== playerId)!
-        nextState.winnerPlayerId = opponentId
-        events.push({ type: GAME_EVENT_TYPE.GAME_OVER, winnerPlayerId: opponentId })
-        break
-      }
-
-      const drawnCard = player.deck.shift()!
-
-      if (player.hand.length < MAX_CARDS_IN_HAND) {
-        player.hand.push(drawnCard)
-      } else {
-        player.graveyard.push(drawnCard)
-      }
-
-      events.push({
-        type: GAME_EVENT_TYPE.CARD_DRAWN,
-        playerId,
-        cardInstanceId: drawnCard.instanceId,
-      })
-    }
-
-    nextState.consecutivePasses = 0
+    passCombatPriority(nextState, events)
 
     return {
       state: nextState,
@@ -194,10 +39,250 @@ export const passAction = (state: GameState, action: PassAction): ApplyActionRes
     }
   }
 
-  nextState.turnPlayerId = getNextPlayerId(nextState)
+  passRoundPriority(nextState, events)
 
   return {
     state: nextState,
     events,
   }
+}
+
+function validatePassAction(state: GameState, action: PassAction): void {
+  if (state.winnerPlayerId !== null) {
+    throw new Error(`Game has already ended. Winner: ${state.winnerPlayerId}`)
+  }
+
+  if (state.turnPlayerId !== action.playerId) {
+    throw new Error(`It is not player "${action.playerId}" turn to pass`)
+  }
+}
+
+function passSpellStackPriority(state: GameState, events: GameEvent[]): void {
+  state.consecutivePasses += 1
+
+  if (state.consecutivePasses === 2) {
+    const spellItem = state.spellStack.pop()!
+    resolveSpellItem(state, events, spellItem)
+
+    state.consecutivePasses = 0
+  }
+
+  state.turnPlayerId = getNextPlayerId(state)
+}
+
+function passCombatPriority(state: GameState, events: GameEvent[]): void {
+  state.consecutivePasses += 1
+
+  if (state.consecutivePasses === 2) {
+    const attackerPlayerId = state.combat!.attackerPlayerId
+
+    resolveCombat(state, events)
+
+    state.combat = null
+    state.consecutivePasses = 0
+
+    if (state.winnerPlayerId === null) {
+      state.turnPlayerId = attackerPlayerId
+    }
+
+    return
+  }
+
+  state.turnPlayerId = getNextPlayerId(state)
+}
+
+function passRoundPriority(state: GameState, events: GameEvent[]): void {
+  state.consecutivePasses += 1
+
+  if (state.consecutivePasses === 2) {
+    progressRound(state, events)
+
+    return
+  }
+
+  state.turnPlayerId = getNextPlayerId(state)
+}
+
+function progressRound(state: GameState, events: GameEvent[]): void {
+  events.push({ type: GAME_EVENT_TYPE.ROUND_ENDED, round: state.round })
+
+  for (const playerId in state.players) {
+    endPlayerRoundCleanup(state.players[playerId]!, events)
+  }
+
+  advanceRound(state, events)
+  runDrawPhase(state, events)
+
+  state.consecutivePasses = 0
+}
+
+function endPlayerRoundCleanup(player: PlayerState, events: GameEvent[]): void {
+  discardFleetingCards(player, events)
+  purgeEphemeralUnits(player, events)
+
+  for (const card of player.board) {
+    if (card.type !== CARD_TYPE.UNIT) continue
+
+    resetUnitRoundState(card, events)
+  }
+}
+
+function discardFleetingCards(player: PlayerState, events: GameEvent[]): void {
+  const fleetingCards = player.hand.filter((card) => card.keywords?.includes(KEYWORD.FLEETING))
+
+  if (fleetingCards.length === 0) return
+
+  const fleetingIds = new Set(fleetingCards.map((c) => c.instanceId))
+  player.hand = player.hand.filter((c) => !fleetingIds.has(c.instanceId))
+  player.graveyard.push(...fleetingCards)
+
+  for (const card of fleetingCards) {
+    events.push({
+      type: GAME_EVENT_TYPE.CARD_DISCARDED,
+      playerId: player.id,
+      cardInstanceId: card.instanceId,
+    })
+  }
+}
+
+function purgeEphemeralUnits(player: PlayerState, events: GameEvent[]): void {
+  const ephemeralUnits = player.board.filter((card) => card.keywords?.includes(KEYWORD.EPHEMERAL))
+
+  if (ephemeralUnits.length === 0) return
+
+  const ephemeralIds = new Set(ephemeralUnits.map((c) => c.instanceId))
+  player.board = player.board.filter((c) => !ephemeralIds.has(c.instanceId))
+  player.graveyard.push(...ephemeralUnits)
+
+  for (const card of ephemeralUnits) {
+    events.push({
+      type: GAME_EVENT_TYPE.UNIT_DIED,
+      unitInstanceId: card.instanceId,
+    })
+  }
+}
+
+function resetUnitRoundState(unit: UnitCardInstance, events: GameEvent[]): void {
+  if (unit.tempAttack) {
+    unit.attack = Math.max(0, unit.attack - unit.tempAttack)
+    unit.tempAttack = 0
+  }
+
+  if (unit.tempHealth) {
+    unit.health = Math.max(1, unit.health - unit.tempHealth)
+    unit.maxHealth = Math.max(1, unit.maxHealth - unit.tempHealth)
+    unit.tempHealth = 0
+  }
+
+  if (unit.tempKeywords && unit.tempKeywords.length > 0) {
+    const tempSet = new Set(unit.tempKeywords)
+    unit.keywords = unit.keywords?.filter((k) => !tempSet.has(k))
+    unit.tempKeywords = []
+  }
+
+  if (unit.keywords?.includes(KEYWORD.BARRIER)) {
+    unit.keywords = unit.keywords.filter((k) => k !== KEYWORD.BARRIER)
+  }
+
+  healRegenerationUnit(unit, events)
+}
+
+function healRegenerationUnit(unit: UnitCardInstance, events: GameEvent[]): void {
+  if (!unit.keywords?.includes(KEYWORD.REGENERATION)) return
+  if (unit.health >= unit.maxHealth) return
+
+  const delta = unit.maxHealth - unit.health
+
+  unit.health = unit.maxHealth
+
+  events.push({
+    type: GAME_EVENT_TYPE.HEAL_DEALT,
+    targetId: unit.instanceId,
+    amount: delta,
+    isReputation: false,
+  })
+}
+
+function advanceRound(state: GameState, events: GameEvent[]): void {
+  state.round += 1
+  alternateInitiative(state)
+
+  events.push({
+    type: GAME_EVENT_TYPE.ROUND_STARTED,
+    initiativePlayerId: state.initiativePlayerId,
+    round: state.round,
+  })
+}
+
+function alternateInitiative(state: GameState): void {
+  const prevInitiativeId = state.initiativePlayerId
+  const nextInitiativeId = Object.keys(state.players).find((id) => id !== prevInitiativeId)!
+
+  state.initiativePlayerId = nextInitiativeId
+  state.turnPlayerId = nextInitiativeId
+
+  state.players[nextInitiativeId]!.hasAttackToken = true
+  state.players[prevInitiativeId]!.hasAttackToken = false
+}
+
+function runDrawPhase(state: GameState, events: GameEvent[]): void {
+  for (const playerId in state.players) {
+    const player = state.players[playerId]!
+
+    refreshEnergy(player, playerId, events)
+
+    if (player.deck.length === 0) {
+      endGameOnEmptyDeck(state, playerId, events)
+
+      return
+    }
+
+    drawTopCard(player, playerId, events)
+  }
+}
+
+function refreshEnergy(player: PlayerState, playerId: string, events: GameEvent[]): void {
+  const leftover = player.energy
+
+  player.maxEnergy = Math.min(10, player.maxEnergy + 1)
+  player.energy = player.maxEnergy
+  player.reservedEnergy = Math.min(3, player.reservedEnergy + leftover)
+
+  events.push(
+    {
+      type: GAME_EVENT_TYPE.ENERGY_CHANGED,
+      playerId,
+      energy: player.energy,
+      isReserved: false,
+    },
+    {
+      type: GAME_EVENT_TYPE.ENERGY_CHANGED,
+      playerId,
+      energy: player.reservedEnergy,
+      isReserved: true,
+    },
+  )
+}
+
+function endGameOnEmptyDeck(state: GameState, playerId: string, events: GameEvent[]): void {
+  const opponentId = Object.keys(state.players).find((id) => id !== playerId)!
+
+  state.winnerPlayerId = opponentId
+  events.push({ type: GAME_EVENT_TYPE.GAME_OVER, winnerPlayerId: opponentId })
+}
+
+function drawTopCard(player: PlayerState, playerId: string, events: GameEvent[]): void {
+  const drawnCard = player.deck.shift()!
+
+  if (player.hand.length < MAX_CARDS_IN_HAND) {
+    player.hand.push(drawnCard)
+  } else {
+    player.graveyard.push(drawnCard)
+  }
+
+  events.push({
+    type: GAME_EVENT_TYPE.CARD_DRAWN,
+    playerId,
+    cardInstanceId: drawnCard.instanceId,
+  })
 }

@@ -10,6 +10,7 @@ import {
 } from '../../types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
 import type { ApplyActionResult } from '../apply-action'
+import { resolveSpellItem } from '../spells/resolve-spell-stack'
 
 export const playSpellAction = (state: GameState, action: PlaySpellAction): ApplyActionResult => {
   const nextState: GameState = structuredClone(state)
@@ -18,9 +19,21 @@ export const playSpellAction = (state: GameState, action: PlaySpellAction): Appl
   const events: GameEvent[] = []
 
   spendSpellCost(nextState.players[action.playerId]!, events, action.playerId, spellCard.cost)
-  deploySpellToStack(nextState, action, spellCard)
+  removeSpellFromHand(nextState, action)
 
-  nextState.turnPlayerId = getNextPlayerId(nextState)
+  if (spellCard.speed === SPELL_SPEED.BURST) {
+    resolveSpellItem(nextState, events, {
+      spell: spellCard,
+      targetUnitInstanceId: action.targetUnitInstanceId,
+    })
+  } else {
+    nextState.spellStack.push({
+      spell: spellCard,
+      targetUnitInstanceId: action.targetUnitInstanceId,
+    })
+    nextState.turnPlayerId = getNextPlayerId(nextState)
+  }
+
   nextState.consecutivePasses = 0
 
   return {
@@ -56,6 +69,10 @@ function validatePlaySpellAction(state: GameState, action: PlaySpellAction): Spe
 
   if (spellCard.speed === SPELL_SPEED.SLOW && state.combat !== null) {
     throw new Error('Cannot play slow spell while combat is in progress')
+  }
+
+  if (spellCard.speed === SPELL_SPEED.SLOW && state.spellStack.length > 0) {
+    throw new Error('Cannot play slow spell while other spells are on the stack')
   }
 
   const availableEnergy = playerState.energy + playerState.reservedEnergy
@@ -116,16 +133,7 @@ function spendSpellCost(
   }
 }
 
-function deploySpellToStack(
-  state: GameState,
-  action: PlaySpellAction,
-  spellCard: SpellCardInstance,
-): void {
+function removeSpellFromHand(state: GameState, action: PlaySpellAction): void {
   const playerState = state.players[action.playerId]!
   playerState.hand = playerState.hand.filter((c) => c.instanceId !== action.cardInstanceId)
-
-  state.spellStack.push({
-    spell: spellCard,
-    targetUnitInstanceId: action.targetUnitInstanceId,
-  })
 }

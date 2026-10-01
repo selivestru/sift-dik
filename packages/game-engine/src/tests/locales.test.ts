@@ -55,7 +55,13 @@ describe('Locales', () => {
     'support',
   ]
 
-  const cardIds: CardId[] = [CHARACTERS.TREMOLO, SPELL_TYPES.PREEMPTIVE_STRIKE]
+  const cardIds: CardId[] = [
+    CHARACTERS.TREMOLO,
+    SPELL_TYPES.PREEMPTIVE_STRIKE,
+    SPELL_TYPES.TEMP_STUN,
+    SPELL_TYPES.TEMP_BURST,
+    SPELL_TYPES.TEMP_SLOW,
+  ]
 
   test('Every locale provides strings for every card and term', () => {
     for (const code of Object.keys(LOCALES) as Array<keyof typeof LOCALES>) {

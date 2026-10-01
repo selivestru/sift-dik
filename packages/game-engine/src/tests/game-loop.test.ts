@@ -129,10 +129,21 @@ describe('Game Engine - Layer 0', () => {
     expect(attackResult.state.turnPlayerId).toBe(defenderId)
 
     const defendingUnitId = attackResult.state.players[defenderId]!.board[0]!.instanceId
-    const combatResult = applyAction(attackResult.state, {
+    const blockResult = applyAction(attackResult.state, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: defenderId,
       blocks: [{ attackerInstanceId: attackingUnitId, defenderInstanceId: defendingUnitId }],
+    })
+
+    // Both players pass consecutively to resolve the combat strikes
+    const strikePass = applyAction(blockResult.state, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: blockResult.state.turnPlayerId,
+    }).state
+
+    const combatResult = applyAction(strikePass, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: strikePass.turnPlayerId,
     })
 
     // Both units dealt 2 damage to each other (3 - 2 = 1 health)
@@ -144,7 +155,7 @@ describe('Game Engine - Layer 0', () => {
     expect(combatResult.state.combat).toBeNull()
     expect(combatResult.state.players[attackerId]!.reputation).toBe(20)
     expect(combatResult.state.players[defenderId]!.reputation).toBe(20)
-    expect(combatResult.state.turnPlayerId).toBe(defenderId)
+    expect(combatResult.state.turnPlayerId).toBe(attackerId)
   })
 
   test('should advance to next round after two consecutive passes', () => {

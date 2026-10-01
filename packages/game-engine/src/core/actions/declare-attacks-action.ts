@@ -72,6 +72,17 @@ function validateDeclareAttacksAction(state: GameState, action: DeclareAttacksAc
   if (hasCannotAttackUnit) {
     throw new Error('Cannot declare attack: one or more attackers have the "cannot_attack" keyword')
   }
+
+  const hasStunnedUnit = action.attackers.some((id) => {
+    const unit = playerState.board.find((u) => u.instanceId === id)
+    return unit?.keywords?.includes(KEYWORD.STUNNED)
+  })
+
+  if (hasStunnedUnit) {
+    throw new Error(
+      `Cannot declare attack: one or more attackers have the "${KEYWORD.STUNNED}" keyword`,
+    )
+  }
 }
 
 function initializeCombatSlots(state: GameState, action: DeclareAttacksAction): void {
@@ -82,6 +93,7 @@ function initializeCombatSlots(state: GameState, action: DeclareAttacksAction): 
   state.combat = {
     attackerPlayerId: action.playerId,
     defenderPlayerId: getNextPlayerId(state),
+    blocksDeclared: false,
     slots: action.attackers.map((cardInstanceId) => {
       const attacker = playerBoardCards.find(
         (card) => card.instanceId === cardInstanceId,

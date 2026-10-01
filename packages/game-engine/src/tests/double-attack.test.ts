@@ -74,10 +74,20 @@ describe('Keyword: Double Attack', () => {
       attackers: [attackingUnitId],
     }).state
 
-    const combatResult = applyAction(attackState, {
+    const blockResult = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: defenderId,
       blocks: [{ attackerInstanceId: attackingUnitId, defenderInstanceId: defendingUnitId }],
+    })
+
+    const strikePass = applyAction(blockResult.state, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: blockResult.state.turnPlayerId,
+    }).state
+
+    const combatResult = applyAction(strikePass, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: strikePass.turnPlayerId,
     })
 
     // Strike 1: 5 - 2 = 3 HP

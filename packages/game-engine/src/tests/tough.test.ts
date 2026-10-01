@@ -76,10 +76,21 @@ describe('Keyword: Tough', () => {
       attackers: [attackingUnitId],
     }).state
 
-    const combatResult = applyAction(attackState, {
+    const blockResult = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: defenderId,
       blocks: [{ attackerInstanceId: attackingUnitId, defenderInstanceId: defendingUnitId }],
+    })
+
+    // 3. Both players pass consecutively: combat strikes resolve
+    const strikePass = applyAction(blockResult.state, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: blockResult.state.turnPlayerId,
+    }).state
+
+    const combatResult = applyAction(strikePass, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: strikePass.turnPlayerId,
     })
 
     // Attacker (without Tough) took full 2 damage -> 3 - 2 = 1 HP

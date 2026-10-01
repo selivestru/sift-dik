@@ -82,10 +82,20 @@ describe('Keyword: Barrier', () => {
       attackers: [attackingUnitId],
     }).state
 
-    const combatResult = applyAction(attackState, {
+    const blockResult = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: defenderId,
       blocks: [{ attackerInstanceId: attackingUnitId, defenderInstanceId: defendingUnitId }],
+    })
+
+    const strikePass = applyAction(blockResult.state, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: blockResult.state.turnPlayerId,
+    }).state
+
+    const combatResult = applyAction(strikePass, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: strikePass.turnPlayerId,
     })
 
     // Blocker survived 10 damage without a scratch (health is still 2)

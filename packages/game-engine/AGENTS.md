@@ -74,10 +74,11 @@ Welcome, Agent. This document contains all essential domain knowledge, architect
 - **Decomposed Actions:**
   - `PLAY_UNIT`: validates energy, board cap (6), turn, card type; spends energy; deploys unit to board; triggers Impulse if applicable; passes priority.
   - `DECLARE_ATTACKS`: validates attack token, attackers on board, `cannot_attack` keyword; moves attackers to `combat.slots`; triggers attack/support abilities; passes priority to defender.
-  - `DECLARE_BLOCKS`: 1-to-1 blocker assignments, elusive and `cannot_block` validation, pressure validation (requires $\ge 3$ attack); resolves combat slots with double attack, quick attack, standard strikes, lifesteal, overwhelm, ram, fury, invulnerable, barrier, and ephemeral mechanics.
-  - `PASS`: alternates turns. If spells are on the stack, passes resolve the stack before round progression. If `consecutivePasses === 2`: increments round, alternates initiative and attack token, rolls unspent energy into reserved energy (cap 3), refills energy, draws 1 card, discards fleeting cards, purges unspent ephemeral units, resets temporary stats (`tempAttack`, `tempHealth`, `tempKeywords`, `barrier`).
+  - `DECLARE_BLOCKS` (LoR combat sequence): validates defender turn, `blocksDeclared === false`, `cannot_block`/`stunned` keywords, elusive and pressure restrictions (requires $\ge 3$ attack); assigns 1-to-1 blockers into `combat.slots`, sets `combat.blocksDeclared = true`, and passes priority to the **attacker** (reaction window). Does NOT resolve strikes.
+  - **Combat strike resolution** (`src/core/combat/resolve-combat.ts`): strikes resolve only when the spell stack is empty AND both players pass consecutively during active combat. Resolves slots left-to-right with double attack, quick attack, standard strikes, lifesteal, overwhelm, ram, fury, invulnerable, barrier, and ephemeral mechanics. After resolution combat closes and priority returns to the attacker. This enables LoR reaction windows: fast spells can be cast after blocks are declared and apply before strikes (e.g. Preemptive Strike on a blocked attacker, stunning a blocker so the attacker strikes Reputation).
+  - `PASS`: if spells are on the stack, resolves the stack (LIFO) first. If combat is active with an empty stack: two consecutive passes resolve strikes instead of ending the round; `consecutivePasses` resets after combat, so combat passes never advance the round. Outside combat, `consecutivePasses === 2`: increments round, alternates initiative and attack token, rolls unspent energy into reserved energy (cap 3), refills energy, draws 1 card, discards fleeting cards, purges unspent ephemeral units, resets temporary stats (`tempAttack`, `tempHealth`, `tempKeywords`, `barrier`).
 
-### Layer 1: Combat Keywords & Mechanics (17 KEYWORDS COMPLETED)
+### Layer 1: Combat Keywords & Mechanics (18 KEYWORDS COMPLETED)
 
 All 17 combat keywords are implemented with dedicated isolated test suites (1 test file per keyword):
 
@@ -98,17 +99,19 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
 15. **`invulnerable` (`src/tests/invulnerable.test.ts`):** Unit is immune to all combat damage (takes 0 damage).
 16. **`pressure` (`src/tests/pressure.test.ts`):** Unit with pressure can only be blocked by enemies with 3 or more attack.
 17. **`barrier` (`src/tests/barrier.test.ts`):** Negates the next incoming damage > 0 and is consumed. Unconsumed barriers expire at round end.
+18. **`stunned` (`src/tests/stun.test.ts`):** Stunned unit cannot be declared as attacker or blocker this round; a unit stunned while attacking is removed from combat and returns to its owner's board. Expires at round end via `tempKeywords`.
 
 ### Layer 1: Spells & Spell Stack System (COMPLETED)
 
 - **Action:** `PLAY_SPELL` (`src/core/actions/play-spell-action.ts`):
-  - Validates turn, hand presence, card type, target presence, energy availability, and slow spell restrictions in combat.
+  - Validates turn, hand presence, card type, target presence, energy availability, and slow spell restrictions: `slow` requires empty stack AND no active combat (slow is never a reaction); playing units follows the same slow-speed rules (`play-unit-action.ts` rejects units while spells are on the stack or during combat).
   - **Spell Mana Banking:** Spends `reservedEnergy` first, then spills over into base `energy`.
-  - Places `fast` and `slow` spells into `state.spellStack`.
-- **LIFO Stack Resolution:** `src/core/spells/resolve-spell-stack.ts`:
-  - When opponent passes on a non-empty spell stack, spells resolve from newest to oldest (`.pop()`).
+  - `burst` spells resolve instantly on cast (LoR burst): no stack entry, no priority pass — the caster keeps the turn and `consecutivePasses` resets. `fast` and `slow` spells are placed into `state.spellStack` and pass priority to the opponent.
+- **Sequential Stack Resolution:** `src/core/spells/resolve-spell-stack.ts` (`resolveSpellItem`):
+  - When both players pass consecutively on a non-empty spell stack, exactly ONE spell resolves — the top of the stack (newest, `.pop()`).
+  - After each resolution players exchange priority again (opponent of the resolved spell's caster goes first) and may react before the next spell resolves.
   - Resolved spells move to owner's `graveyard`.
-- **Pass Action Integration:** `src/core/actions/pass-action.ts` prioritizes resolving `spellStack` before round turnover and allows passing during combat if spells are on the stack.
+- **Pass Action Integration:** `src/core/actions/pass-action.ts` prioritizes the `spellStack` (one spell per consecutive double pass) before round progression; during active combat with an empty stack, two consecutive passes resolve combat strikes (see Combat strike resolution above) instead of advancing the round.
 
 ### Layer 1: Triggered Abilities & Card Registry (COMPLETED)
 
@@ -130,6 +133,21 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
     - Fast spell, Cost 3.
     - Grants target ally +2|+1 and temporary `quick_attack` until round end.
     - _Test:_ `src/tests/preemptive-strike.test.ts`.
+  - **Temp Stun (`src/catalog/spells/temp-stun.ts`) — TEMPORARY:**
+    - Test vehicle for the `stunned` keyword, to be removed or replaced once a real stun card exists.
+    - Fast spell, Cost 2. Stuns target unit; if the target is attacking, it is removed from combat back to its owner's board.
+    - Handler: `src/core/spells/handlers/temp-stun.ts`.
+    - _Test:_ `src/tests/stun.test.ts`.
+  - **Temp Burst (`src/catalog/spells/temp-burst.ts`) — TEMPORARY:**
+    - Test vehicle for burst spell speed, to be removed or replaced once a real burst card exists.
+    - Burst spell, Cost 1. Gives an ally +1|+0 this round (round-scoped `tempAttack`).
+    - Handler: `src/core/spells/handlers/temp-burst.ts`.
+    - _Test:_ `src/tests/burst-speed.test.ts`.
+  - **Temp Slow (`src/catalog/spells/temp-slow.ts`) — TEMPORARY:**
+    - Test vehicle for slow spell speed, to be removed or replaced once a real slow card exists.
+    - Slow spell, Cost 2. Gives an ally +1|+1 permanently.
+    - Handler: `src/core/spells/handlers/temp-slow.ts`.
+    - _Test:_ `src/tests/slow-speed.test.ts`.
 
 ### Layer 1: Localization & Interactive Descriptions (COMPLETED)
 - **Architecture:** the engine and `GameState` stay locale-agnostic; localized strings live in the `src/locales/` layer and are resolved by card id on the client.
@@ -147,7 +165,7 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
 src/
 ├── catalog/                          # Card templates & definitions
 │   ├── characters/                   # Character unit cards (e.g. tremolo.ts)
-│   └── spells/                       # Spell cards (e.g. preemptive-strike.ts)
+│   └── spells/                       # Spell cards (e.g. preemptive-strike.ts, temp-stun.ts, temp-burst.ts, temp-slow.ts)
 ├── constants/
 │   ├── characters.ts                 # Character card ids (CHARACTERS) & Tremolo paths (TREMOLO_PATH)
 │   └── game.ts                       # Game limits (MAX_REPUTATION=20, INIT_ENERGY=1, etc.)
@@ -158,6 +176,8 @@ src/
 │   ├── types.ts                      # Locale, CardStrings, TermEntry, TermKey, CardId
 │   └── index.ts                      # LOCALES map, getLocale, getCardStrings
 ├── core/
+│   ├── combat/
+│   │   └── resolve-combat.ts         # Combat strike resolution (LoR reaction window)
 │   ├── abilities/
 │   │   ├── handlers/                 # Isolated ability handlers
 │   │   │   ├── tremolo-path.ts
@@ -166,9 +186,12 @@ src/
 │   │   └── trigger-abilities.ts      # Ability dispatcher
 │   ├── spells/
 │   │   ├── handlers/                 # Isolated spell handlers
-│   │   │   └── preemptive-strike.ts
+│   │   │   ├── preemptive-strike.ts
+│   │   │   ├── temp-stun.ts
+│   │   │   ├── temp-burst.ts
+│   │   │   └── temp-slow.ts
 │   │   ├── registry.ts               # Spells routing table
-│   │   └── resolve-spell-stack.ts    # LIFO stack resolution
+│   │   └── resolve-spell-stack.ts    # Single-spell resolve (sequential stack resolution)
 │   ├── actions/
 │   │   ├── declare-attacks-action.ts # Decomposed attack phase coordinator
 │   │   ├── declare-blocks-action.ts  # Decomposed combat resolution coordinator
@@ -177,10 +200,12 @@ src/
 │   │   └── play-unit-action.ts       # Decomposed unit summon coordinator
 │   ├── apply-action.ts               # Central action dispatcher
 │   └── create-game.ts                # Deterministic game initialization
-├── tests/                            # Vitest suites (1 test file per mechanic, 20 files total)
+├── tests/                            # Vitest suites (1 test file per mechanic, 26 files total)
 │   ├── barrier.test.ts
+│   ├── burst-speed.test.ts
 │   ├── cannot-attack.test.ts
 │   ├── cannot-block.test.ts
+│   ├── combat-reaction.test.ts
 │   ├── double-attack.test.ts
 │   ├── elusive.test.ts
 │   ├── ephemeral.test.ts
@@ -197,6 +222,9 @@ src/
 │   ├── quick-attack.test.ts
 │   ├── ram.test.ts
 │   ├── regeneration.test.ts
+│   ├── slow-speed.test.ts
+│   ├── spell-stack.test.ts
+│   ├── stun.test.ts
 │   ├── tough.test.ts
 │   └── tremolo.test.ts
 ├── types/                            # TypeScript interfaces & discriminated unions
@@ -221,6 +249,5 @@ src/
    - Stand up `apps/server` (minimal NestJS WebSocket Gateway forwarding `applyAction`).
    - Stand up `apps/web` (React + Tailwind card board rendering Tremolo, Preemptive Strike, and player board).
 2. **Layer 1 Expansion Option:**
-   - Burst spell speed handling (instant execution without stack).
    - Challenger keyword (forcing enemy units to block).
    - Additional character cards from user design notes.

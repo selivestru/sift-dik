@@ -141,6 +141,17 @@ describe('Keyword: Pressure', () => {
       ],
     })
 
-    expect(validBlockResult.state.combat).toBeNull()
+    // Both players pass consecutively to resolve the combat strikes
+    const strikePass = applyAction(validBlockResult.state, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: validBlockResult.state.turnPlayerId,
+    }).state
+
+    const combatResult = applyAction(strikePass, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: strikePass.turnPlayerId,
+    })
+
+    expect(combatResult.state.combat).toBeNull()
   })
 })

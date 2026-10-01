@@ -132,15 +132,23 @@ describe('Character: Tremolo', () => {
       blocks: [],
     })
 
-    const allyAfterCombat = combatResult.state.players.p2!.board.find(
-      (u) => u.id === 'freshman-ally',
-    )!
+    const strikePass = applyAction(combatResult.state, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: combatResult.state.turnPlayerId,
+    }).state
+
+    const resolvedCombat = applyAction(strikePass, {
+      type: GAME_ACTION_TYPE.PASS,
+      playerId: strikePass.turnPlayerId,
+    }).state
+
+    const allyAfterCombat = resolvedCombat.players.p2!.board.find((u) => u.id === 'freshman-ally')!
     expect(allyAfterCombat.attack).toBe(3)
     expect(allyAfterCombat.health).toBe(3)
 
-    const pass1 = applyAction(combatResult.state, {
+    const pass1 = applyAction(resolvedCombat, {
       type: GAME_ACTION_TYPE.PASS,
-      playerId: combatResult.state.turnPlayerId,
+      playerId: resolvedCombat.turnPlayerId,
     }).state
 
     const nextRoundState = applyAction(pass1, {

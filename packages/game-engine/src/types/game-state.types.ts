@@ -21,6 +21,7 @@ export interface CombatSlot {
 export interface CombatState {
   attackerPlayerId: string
   defenderPlayerId: string
+  blocksDeclared: boolean
   slots: CombatSlot[]
 }
 

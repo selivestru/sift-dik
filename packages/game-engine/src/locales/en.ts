@@ -15,6 +15,18 @@ export const en: Locale = {
       name: 'Preemptive Strike',
       description: 'Give an ally +2|+1 and {quick_attack} this round.',
     },
+    [SPELL_TYPES.TEMP_STUN]: {
+      name: 'Stun',
+      description: 'Stun an enemy this round. {stunned}',
+    },
+    [SPELL_TYPES.TEMP_BURST]: {
+      name: 'Burst of Energy',
+      description: 'Give an ally +1|+0 this round.',
+    },
+    [SPELL_TYPES.TEMP_SLOW]: {
+      name: 'Pep Talk',
+      description: 'Give an ally +1|+1.',
+    },
   },
   terms: {
     summon: {
@@ -117,6 +129,10 @@ export const en: Locale = {
     barrier: {
       name: 'Barrier',
       rules: 'Negates the next incoming damage greater than 0 and is consumed.',
+    },
+    stunned: {
+      name: 'Stun',
+      rules: "A stunned unit is removed from combat and can't attack or block this round.",
     },
   },
 }

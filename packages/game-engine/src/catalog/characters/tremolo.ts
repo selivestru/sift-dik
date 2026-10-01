@@ -13,6 +13,5 @@ export const tremoloCard: UnitCard = {
   baseHealth: 3,
   health: 3,
   maxHealth: 3,
-  keywords: [],
   abilities: [ABILITY.TREMOLO_PATH],
 }
