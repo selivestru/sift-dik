@@ -110,6 +110,7 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
   - Validates turn, hand presence, card type, target presence, energy availability, and slow spell restrictions: `slow` requires empty stack AND no active combat (slow is never a reaction); playing units follows the same slow-speed rules (`play-unit-action.ts` rejects units while spells are on the stack or during combat).
   - **Spell Mana Banking:** Spends `reservedEnergy` first, then spills over into base `energy`.
   - `burst` spells resolve instantly on cast (LoR burst): no stack entry, no priority pass — the caster keeps the turn and `consecutivePasses` resets. `fast` and `slow` spells are placed into `state.spellStack` and pass priority to the opponent.
+- **Round-End Trigger Dispatch:** `ON_ROUND_END` fires in `pass-action.ts` `progressRound` right after the `ROUND_ENDED` event, before round cleanup (temporary stats reset, ephemeral purge) — so round-end abilities resolve while their units are still on the board.
 - **Sequential Stack Resolution:** `src/core/spells/resolve-spell-stack.ts` (`resolveSpellItem`):
   - When both players pass consecutively on a non-empty spell stack, exactly ONE spell resolves — the top of the stack (newest, `.pop()`).
   - After each resolution players exchange priority again (opponent of the resolved spell's caster goes first) and may react before the next spell resolves.
@@ -180,6 +181,12 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
   - **Brotherhood (`src/catalog/spells/brotherhood.ts`):**
     - Fast spell, Cost 4. Grants `barrier` to all own units on board and in combat slots (expires at round end if unconsumed).
     - _Test:_ `src/tests/rusty.test.ts`.
+  - **Jamie (`src/catalog/characters/jamie.ts`):** DIKs, Cost 1, 1|2, `impulse`.
+    - _Bloom (ON_ROUND_END):_ restore 1 Reserved Energy (cap 3); if it is already full, grant the weakest allied unit (lowest attack, excluding himself, ties -> board order) +1|+1 permanently instead.
+    - _Test:_ `src/tests/jamie.test.ts`.
+  - **Will Bloom Again (`src/catalog/spells/will-bloom-again.ts`):**
+    - Slow spell, Cost 2. Fully restores an own ally's health (no-op with no missing health; enemy targets are rejected).
+    - _Test:_ `src/tests/jamie.test.ts`.
 
 ### Layer 1: Localization & Interactive Descriptions (COMPLETED)
 - **Architecture:** the engine and `GameState` stay locale-agnostic; localized strings live in the `src/locales/` layer and are resolved by card id on the client.
@@ -232,7 +239,7 @@ src/
 │   │   └── play-unit-action.ts       # Decomposed unit summon coordinator
 │   ├── apply-action.ts               # Central action dispatcher
 │   └── create-game.ts                # Deterministic game initialization
-├── tests/                            # Vitest suites (1 test file per mechanic, 32 files total)
+├── tests/                            # Vitest suites (1 test file per mechanic, 33 files total)
 │   ├── barrier.test.ts
 │   ├── burst-speed.test.ts
 │   ├── cannot-attack.test.ts
@@ -248,6 +255,7 @@ src/
 │   ├── game-loop.test.ts
 │   ├── impulse.test.ts
 │   ├── invulnerable.test.ts
+│   ├── jamie.test.ts
 │   ├── josy.test.ts
 │   ├── lifesteal.test.ts
 │   ├── locales.test.ts

@@ -15,6 +15,7 @@ export const SPELL_TYPES = {
   ALWAYS_AND_FOREVER: 'always-and-forever',
   LOW_BLOW: 'low-blow',
   BROTHERHOOD: 'brotherhood',
+  WILL_BLOOM_AGAIN: 'will-bloom-again',
 } as const
 
 export type SpellType = (typeof SPELL_TYPES)[keyof typeof SPELL_TYPES]

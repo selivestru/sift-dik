@@ -46,6 +46,11 @@ export const en: Locale = {
       description:
         '{elusive}. {reputation_strike}: Draw 1 card. If it is a HOTs or DIKs faction card, reduce its cost by 1 this round.',
     },
+    [CHARACTERS.JAMIE]: {
+      name: 'Jamie',
+      description:
+        '{impulse}. {round_end}: Restore 1 {reserved_energy}; if Reserved Energy is full, grant the weakest allied unit +1|+1.',
+    },
     [CHARACTERS.RUSTY]: {
       name: 'Rusty',
       description:
@@ -67,6 +72,10 @@ export const en: Locale = {
     [SPELL_TYPES.BROTHERHOOD]: {
       name: 'Brotherhood',
       description: 'Grant all allies {barrier} this round.',
+    },
+    [SPELL_TYPES.WILL_BLOOM_AGAIN]: {
+      name: 'Will Bloom Again',
+      description: "Fully restore an ally's health.",
     },
   },
   terms: {
@@ -178,6 +187,10 @@ export const en: Locale = {
     reputation_strike: {
       name: 'Strike the Nexus',
       rules: 'Triggers when this unit deals damage to the enemy Reputation.',
+    },
+    round_end: {
+      name: 'Round End',
+      rules: 'Triggers when the round ends.',
     },
     challenger: {
       name: 'Challenger',

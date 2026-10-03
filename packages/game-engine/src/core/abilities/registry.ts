@@ -2,6 +2,7 @@ import { ABILITY, TRIGGER, type AbilityHandlerMap } from '../../types/abilities.
 import { handleDerekBrotherhood } from './handlers/derek-brotherhood'
 import { handleDerekRevenge } from './handlers/derek-revenge'
 import { handleDerekSearch } from './handlers/derek-search'
+import { handleJamieBloom } from './handlers/jamie-bloom'
 import { handleJosyDraw } from './handlers/josy-draw'
 import { handleMayaSearch } from './handlers/maya-search'
 import { handleMayaSupport } from './handlers/maya-support'
@@ -27,4 +28,5 @@ export const ABILITIES: AbilityHandlerMap = {
   [ABILITY.JOSY_DRAW]: { trigger: TRIGGER.ON_REPUTATION_STRIKE, execute: handleJosyDraw },
   [ABILITY.RUSTY_RECRUITMENT]: { trigger: TRIGGER.ON_SUMMON, execute: handleRustyRecruitment },
   [ABILITY.RUSTY_RALLY]: { trigger: TRIGGER.ON_ATTACK, execute: handleRustyRally },
+  [ABILITY.JAMIE_BLOOM]: { trigger: TRIGGER.ON_ROUND_END, execute: handleJamieBloom },
 }

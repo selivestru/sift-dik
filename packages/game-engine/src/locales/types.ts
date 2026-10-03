@@ -15,6 +15,7 @@ export type TermKey =
   | 'chick_path'
   | 'support'
   | 'reputation_strike'
+  | 'round_end'
 
 export interface TermEntry {
   name: string

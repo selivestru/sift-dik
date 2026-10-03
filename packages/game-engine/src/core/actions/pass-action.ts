@@ -9,8 +9,9 @@ import {
   type PlayerState,
   type UnitCardInstance,
 } from '../../types'
+import { TRIGGER } from '../../types/abilities.types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
-import { notifyAllyDeath } from '../abilities/trigger-abilities'
+import { notifyAllyDeath, triggerUnitAbilities } from '../abilities/trigger-abilities'
 import type { ApplyActionResult } from '../apply-action'
 import { resolveCombat } from '../combat/resolve-combat'
 import { resolveSpellItem } from '../spells/resolve-spell-stack'
@@ -108,6 +109,8 @@ function passRoundPriority(state: GameState, events: GameEvent[]): void {
 function progressRound(state: GameState, events: GameEvent[]): void {
   events.push({ type: GAME_EVENT_TYPE.ROUND_ENDED, round: state.round })
 
+  triggerRoundEndAbilities(state, events)
+
   for (const playerId in state.players) {
     endPlayerRoundCleanup(state, state.players[playerId]!, events)
   }
@@ -116,6 +119,14 @@ function progressRound(state: GameState, events: GameEvent[]): void {
   runDrawPhase(state, events)
 
   state.consecutivePasses = 0
+}
+
+function triggerRoundEndAbilities(state: GameState, events: GameEvent[]): void {
+  for (const playerId in state.players) {
+    for (const unit of state.players[playerId]!.board) {
+      triggerUnitAbilities(state, events, unit, TRIGGER.ON_ROUND_END, { sourceUnit: unit })
+    }
+  }
 }
 
 function endPlayerRoundCleanup(state: GameState, player: PlayerState, events: GameEvent[]): void {

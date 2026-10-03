@@ -7,6 +7,7 @@ import { handlePreemptiveStrike } from './handlers/preemptive-strike'
 import { handleTempBurst } from './handlers/temp-burst'
 import { handleTempSlow } from './handlers/temp-slow'
 import { handleTempStun } from './handlers/temp-stun'
+import { handleWillBloomAgain } from './handlers/will-bloom-again'
 
 export const SPELL_REGISTRY: Record<SpellType, SpellHandler> = {
   [SPELL_TYPES.PREEMPTIVE_STRIKE]: handlePreemptiveStrike,
@@ -17,4 +18,5 @@ export const SPELL_REGISTRY: Record<SpellType, SpellHandler> = {
   [SPELL_TYPES.ALWAYS_AND_FOREVER]: handleAlwaysAndForever,
   [SPELL_TYPES.LOW_BLOW]: handleLowBlow,
   [SPELL_TYPES.BROTHERHOOD]: handleBrotherhood,
+  [SPELL_TYPES.WILL_BLOOM_AGAIN]: handleWillBloomAgain,
 }
