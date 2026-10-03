@@ -1,6 +1,7 @@
 import { CHARACTERS } from '../../constants/characters'
 import { CARD_FACTION, CARD_TYPE, KEYWORD, type UnitCard } from '../../types'
 import { ABILITY } from '../../types/abilities.types'
+import { SPELL_TYPES } from '../../types/spells.types'
 
 export const rustyCard: UnitCard = {
   id: CHARACTERS.RUSTY,
@@ -14,5 +15,6 @@ export const rustyCard: UnitCard = {
   health: 5,
   maxHealth: 5,
   keywords: [KEYWORD.REGENERATION],
+  relatedCards: [SPELL_TYPES.BROTHERHOOD],
   abilities: [ABILITY.RUSTY_RECRUITMENT, ABILITY.RUSTY_RALLY],
 }

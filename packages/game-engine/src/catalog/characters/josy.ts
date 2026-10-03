@@ -1,6 +1,7 @@
 import { CHARACTERS } from '../../constants/characters'
 import { CARD_FACTION, CARD_TYPE, KEYWORD, type UnitCard } from '../../types'
 import { ABILITY } from '../../types/abilities.types'
+import { SPELL_TYPES } from '../../types/spells.types'
 
 export const josyCard: UnitCard = {
   id: CHARACTERS.JOSY,
@@ -14,5 +15,6 @@ export const josyCard: UnitCard = {
   health: 2,
   maxHealth: 2,
   keywords: [KEYWORD.ELUSIVE],
+  relatedCards: [SPELL_TYPES.LOW_BLOW],
   abilities: [ABILITY.JOSY_DRAW],
 }

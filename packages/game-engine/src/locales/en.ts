@@ -46,6 +46,10 @@ export const en: Locale = {
       description:
         '{elusive}. {reputation_strike}: Draw 1 card. If it is a HOTs or DIKs faction card, reduce its cost by 1 this round.',
     },
+    [CHARACTERS.JACOB]: {
+      name: 'Jacob',
+      description: '{tough}. {summon}: Restore 2 health to all your fighters.',
+    },
     [CHARACTERS.JAMIE]: {
       name: 'Jamie',
       description:
@@ -76,6 +80,11 @@ export const en: Locale = {
     [SPELL_TYPES.WILL_BLOOM_AGAIN]: {
       name: 'Will Bloom Again',
       description: "Fully restore an ally's health.",
+    },
+    [SPELL_TYPES.PORTRAIT]: {
+      name: 'Portrait',
+      description:
+        'Choose a card in your hand. Create a copy of it in hand with 1 less Energy cost and {fleeting}.',
     },
   },
   terms: {

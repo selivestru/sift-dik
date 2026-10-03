@@ -105,7 +105,7 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
 
 ### Layer 1: Spells & Spell Stack System (COMPLETED)
 
-- **Targeting convention:** spell targets are passed positionally in `PlaySpellAction.targets?: string[]` and mirrored on `StackSpell`; the action validates that every entry exists on a board or in combat, and each spell's handler defines the meaning of each position (e.g. Brother's Shoulder: `targets[0]` = own unit to damage, `targets[1]` = ally to buff).
+- **Targeting convention:** spell targets are passed positionally in `PlaySpellAction.targets?: string[]` and mirrored on `StackSpell`; the action validates that every entry exists on a board, in combat, or in the caster's hand (hand-card targets, e.g. Portrait), and each spell's handler defines the meaning of each position (e.g. Brother's Shoulder: `targets[0]` = own unit to damage, `targets[1]` = ally to buff).
 - **Action:** `PLAY_SPELL` (`src/core/actions/play-spell-action.ts`):
   - Validates turn, hand presence, card type, target presence, energy availability, and slow spell restrictions: `slow` requires empty stack AND no active combat (slow is never a reaction); playing units follows the same slow-speed rules (`play-unit-action.ts` rejects units while spells are on the stack or during combat).
   - **Spell Mana Banking:** Spends `reservedEnergy` first, then spills over into base `energy`.
@@ -187,6 +187,13 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
   - **Will Bloom Again (`src/catalog/spells/will-bloom-again.ts`):**
     - Slow spell, Cost 2. Fully restores an own ally's health (no-op with no missing health; enemy targets are rejected).
     - _Test:_ `src/tests/jamie.test.ts`.
+  - **Jacob (`src/catalog/characters/jacob.ts`):** DIKs, Cost 3, 2|4, `tough`.
+    - _Mending (ON_SUMMON):_ restore 2 health to all own board units except himself (capped at missing health; full units are skipped without an event).
+    - _Test:_ `src/tests/jacob.test.ts`.
+  - **Portrait (`src/catalog/spells/portrait.ts`):**
+    - Burst spell, Cost 2. Targets a card in your own hand (new target kind: hand cards pass generic target validation) and creates a copy of it in hand with cost 1 less (floor 0) and `fleeting`; hand overflow goes to the graveyard.
+    - _Test:_ `src/tests/jacob.test.ts`.
+- **Related cards:** every character card carries a required `relatedCards: CardId[]` field (`CardId = Character | SpellType`, defined in `card.types.ts`) — pure UI metadata linking a character to its signature cards; no game logic reads it. Filled: derek/maya/josy/rusty/jamie/jacob; tremolo is empty for now.
 
 ### Layer 1: Localization & Interactive Descriptions (COMPLETED)
 - **Architecture:** the engine and `GameState` stay locale-agnostic; localized strings live in the `src/locales/` layer and are resolved by card id on the client.
@@ -239,7 +246,7 @@ src/
 │   │   └── play-unit-action.ts       # Decomposed unit summon coordinator
 │   ├── apply-action.ts               # Central action dispatcher
 │   └── create-game.ts                # Deterministic game initialization
-├── tests/                            # Vitest suites (1 test file per mechanic, 33 files total)
+├── tests/                            # Vitest suites (1 test file per mechanic, 34 files total)
 │   ├── barrier.test.ts
 │   ├── burst-speed.test.ts
 │   ├── cannot-attack.test.ts
@@ -255,6 +262,7 @@ src/
 │   ├── game-loop.test.ts
 │   ├── impulse.test.ts
 │   ├── invulnerable.test.ts
+│   ├── jacob.test.ts
 │   ├── jamie.test.ts
 │   ├── josy.test.ts
 │   ├── lifesteal.test.ts

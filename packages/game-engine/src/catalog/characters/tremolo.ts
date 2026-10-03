@@ -1,6 +1,7 @@
 import { CHARACTERS } from '../../constants/characters'
 import { CARD_FACTION, CARD_TYPE, type UnitCard } from '../../types'
 import { ABILITY } from '../../types/abilities.types'
+import { SPELL_TYPES } from '../../types/spells.types'
 
 export const tremoloCard: UnitCard = {
   id: CHARACTERS.TREMOLO,
@@ -13,5 +14,6 @@ export const tremoloCard: UnitCard = {
   baseHealth: 3,
   health: 3,
   maxHealth: 3,
+  relatedCards: [SPELL_TYPES.PREEMPTIVE_STRIKE],
   abilities: [ABILITY.TREMOLO_PATH],
 }

@@ -1,8 +1,6 @@
-import type { Character } from '../constants/characters'
-import type { Keyword } from '../types/card.types'
-import type { SpellType } from '../types/spells.types'
+import type { CardId, Keyword } from '../types/card.types'
 
-export type CardId = Character | SpellType
+export type { CardId } from '../types/card.types'
 
 export type TermKey =
   | Keyword

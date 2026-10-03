@@ -83,27 +83,31 @@ function validatePlaySpellAction(state: GameState, action: PlaySpellAction): Spe
   }
 
   for (const targetId of action.targets ?? []) {
-    validateTargetExists(state, targetId)
+    validateTargetExists(state, action.playerId, targetId)
   }
 
   return spellCard
 }
 
-function validateTargetExists(state: GameState, targetUnitInstanceId: string): void {
+function validateTargetExists(state: GameState, casterId: string, targetId: string): void {
   const allBoardUnits = Object.values(state.players).flatMap((p) => p.board)
   const combatUnits = state.combat
     ? state.combat.slots.flatMap((s) => [s.attacker, s.blocker].filter(Boolean))
     : []
 
-  const targetExists = [...allBoardUnits, ...combatUnits].some(
-    (unit) => unit?.instanceId === targetUnitInstanceId,
+  const isUnitTarget = [...allBoardUnits, ...combatUnits].some(
+    (unit) => unit?.instanceId === targetId,
   )
 
-  if (!targetExists) {
-    throw new Error(
-      `Target unit with instance ID "${targetUnitInstanceId}" not found on board or in combat`,
-    )
-  }
+  if (isUnitTarget) return
+
+  const isHandCardTarget = state.players[casterId]!.hand.some(
+    (card) => card.instanceId === targetId,
+  )
+
+  if (isHandCardTarget) return
+
+  throw new Error(`Target with instance ID "${targetId}" not found on board, in combat or in hand`)
 }
 
 function spendSpellCost(

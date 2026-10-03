@@ -1,5 +1,8 @@
+import type { Character } from '../constants/characters'
 import type { AbilityType } from './abilities.types'
 import type { SpellType } from './spells.types'
+
+export type CardId = Character | SpellType
 
 export const CARD_TYPE = {
   UNIT: 'unit',
@@ -62,6 +65,7 @@ export interface UnitCard extends BaseCard {
   keywords?: Keyword[]
   tempKeywords?: Keyword[]
   abilities?: AbilityType[]
+  relatedCards?: CardId[]
 }
 
 export interface UnitCardInstance extends UnitCard {

@@ -3,6 +3,7 @@ import { handleAlwaysAndForever } from './handlers/always-and-forever'
 import { handleBrotherhood } from './handlers/brotherhood'
 import { handleBrothersShoulder } from './handlers/brothers-shoulder'
 import { handleLowBlow } from './handlers/low-blow'
+import { handlePortrait } from './handlers/portrait'
 import { handlePreemptiveStrike } from './handlers/preemptive-strike'
 import { handleTempBurst } from './handlers/temp-burst'
 import { handleTempSlow } from './handlers/temp-slow'
@@ -19,4 +20,5 @@ export const SPELL_REGISTRY: Record<SpellType, SpellHandler> = {
   [SPELL_TYPES.LOW_BLOW]: handleLowBlow,
   [SPELL_TYPES.BROTHERHOOD]: handleBrotherhood,
   [SPELL_TYPES.WILL_BLOOM_AGAIN]: handleWillBloomAgain,
+  [SPELL_TYPES.PORTRAIT]: handlePortrait,
 }

@@ -46,6 +46,10 @@ export const ru: Locale = {
       description:
         '{elusive}. {reputation_strike}: возьмите 1 карту из колоды. Если это карта фракции СЕКСи или ДИКи, уменьшите её стоимость на 1 в этом раунде.',
     },
+    [CHARACTERS.JACOB]: {
+      name: 'Джейкоб',
+      description: '{tough}. {summon}: восстановите всем вашим бойцам 2 здоровья.',
+    },
     [CHARACTERS.JAMIE]: {
       name: 'Джейми',
       description:
@@ -77,6 +81,11 @@ export const ru: Locale = {
     [SPELL_TYPES.WILL_BLOOM_AGAIN]: {
       name: 'Зацветёт снова',
       description: 'Полностью восстановите здоровье союзника.',
+    },
+    [SPELL_TYPES.PORTRAIT]: {
+      name: 'Портрет',
+      description:
+        'Выберите карту в вашей руке. Создайте её копию в руке со стоимостью на 1 Энергию меньше с {fleeting}.',
     },
   },
   terms: {
