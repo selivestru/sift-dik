@@ -173,6 +173,13 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
   - **Low Blow (`src/catalog/spells/low-blow.ts`):**
     - Slow spell, Cost 4. Deals 4 damage to a chosen enemy unit (via `applyDamageToUnit`) and applies `stunned` to it if it survives.
     - _Test:_ `src/tests/josy.test.ts`.
+  - **Rusty (`src/catalog/characters/rusty.ts`):** DIKs, Cost 5, 3|5, `regeneration`.
+    - _Recruitment (ON_SUMMON):_ all allied DIKs in hand and deck permanently cost 1 less (floor 0; no `tempCost` — round-end restore does not touch it).
+    - _Rally (ON_ATTACK):_ all attacking allies except himself gain +1|+1 this round.
+    - _Test:_ `src/tests/rusty.test.ts`.
+  - **Brotherhood (`src/catalog/spells/brotherhood.ts`):**
+    - Fast spell, Cost 4. Grants `barrier` to all own units on board and in combat slots (expires at round end if unconsumed).
+    - _Test:_ `src/tests/rusty.test.ts`.
 
 ### Layer 1: Localization & Interactive Descriptions (COMPLETED)
 - **Architecture:** the engine and `GameState` stay locale-agnostic; localized strings live in the `src/locales/` layer and are resolved by card id on the client.
@@ -225,7 +232,7 @@ src/
 │   │   └── play-unit-action.ts       # Decomposed unit summon coordinator
 │   ├── apply-action.ts               # Central action dispatcher
 │   └── create-game.ts                # Deterministic game initialization
-├── tests/                            # Vitest suites (1 test file per mechanic, 31 files total)
+├── tests/                            # Vitest suites (1 test file per mechanic, 32 files total)
 │   ├── barrier.test.ts
 │   ├── burst-speed.test.ts
 │   ├── cannot-attack.test.ts
@@ -251,6 +258,7 @@ src/
 │   ├── quick-attack.test.ts
 │   ├── ram.test.ts
 │   ├── regeneration.test.ts
+│   ├── rusty.test.ts
 │   ├── slow-speed.test.ts
 │   ├── spell-stack.test.ts
 │   ├── stun.test.ts

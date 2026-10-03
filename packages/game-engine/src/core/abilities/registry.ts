@@ -6,6 +6,8 @@ import { handleJosyDraw } from './handlers/josy-draw'
 import { handleMayaSearch } from './handlers/maya-search'
 import { handleMayaSupport } from './handlers/maya-support'
 import { handleMayaVengeance } from './handlers/maya-vengeance'
+import { handleRustyRally } from './handlers/rusty-rally'
+import { handleRustyRecruitment } from './handlers/rusty-recruitment'
 import { handleTremoloPath, tremoloPathPayloadSchema } from './handlers/tremolo-path'
 import { handleTremoloSupport } from './handlers/tremolo-support'
 
@@ -23,4 +25,6 @@ export const ABILITIES: AbilityHandlerMap = {
   [ABILITY.MAYA_SUPPORT]: { trigger: TRIGGER.ON_ATTACK, execute: handleMayaSupport },
   [ABILITY.MAYA_VENGEANCE]: { trigger: TRIGGER.ON_ALLY_DEATH, execute: handleMayaVengeance },
   [ABILITY.JOSY_DRAW]: { trigger: TRIGGER.ON_REPUTATION_STRIKE, execute: handleJosyDraw },
+  [ABILITY.RUSTY_RECRUITMENT]: { trigger: TRIGGER.ON_SUMMON, execute: handleRustyRecruitment },
+  [ABILITY.RUSTY_RALLY]: { trigger: TRIGGER.ON_ATTACK, execute: handleRustyRally },
 }

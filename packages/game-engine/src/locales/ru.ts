@@ -46,6 +46,12 @@ export const ru: Locale = {
       description:
         '{elusive}. {reputation_strike}: возьмите 1 карту из колоды. Если это карта фракции СЕКСи или ДИКи, уменьшите её стоимость на 1 в этом раунде.',
     },
+    [CHARACTERS.RUSTY]: {
+      name: 'Расти',
+      description:
+        '{regeneration}. {summon}: все союзные ДИКи в руке и колоде стоят на 1 ед. Энергии меньше. ' +
+        'Атака: даруйте всем атакующим союзникам +1|+1 до конца раунда.',
+    },
     [SPELL_TYPES.BROTHERS_SHOULDER]: {
       name: 'Братское плечо',
       description:
@@ -58,6 +64,10 @@ export const ru: Locale = {
     [SPELL_TYPES.LOW_BLOW]: {
       name: 'Удар ниже пояса',
       description: 'Нанесите 4 ед. урона выбранному вражескому бойцу и наложите на цель {stunned}.',
+    },
+    [SPELL_TYPES.BROTHERHOOD]: {
+      name: 'Братство',
+      description: 'Даруйте всем союзникам {barrier} до конца раунда.',
     },
   },
   terms: {

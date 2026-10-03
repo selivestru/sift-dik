@@ -46,6 +46,12 @@ export const en: Locale = {
       description:
         '{elusive}. {reputation_strike}: Draw 1 card. If it is a HOTs or DIKs faction card, reduce its cost by 1 this round.',
     },
+    [CHARACTERS.RUSTY]: {
+      name: 'Rusty',
+      description:
+        '{regeneration}. {summon}: All allied DIKs in hand and deck cost 1 less energy. ' +
+        'Attack: Grant all attacking allies +1|+1 this round.',
+    },
     [SPELL_TYPES.BROTHERS_SHOULDER]: {
       name: "Brother's Shoulder",
       description: 'Deal 1 damage to your own unit to grant an ally +2|+1 this round.',
@@ -57,6 +63,10 @@ export const en: Locale = {
     [SPELL_TYPES.LOW_BLOW]: {
       name: 'Low Blow',
       description: 'Deal 4 damage to a chosen enemy unit and apply {stunned} to the target.',
+    },
+    [SPELL_TYPES.BROTHERHOOD]: {
+      name: 'Brotherhood',
+      description: 'Grant all allies {barrier} this round.',
     },
   },
   terms: {

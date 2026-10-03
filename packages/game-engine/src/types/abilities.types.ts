@@ -28,6 +28,8 @@ export const ABILITY = {
   MAYA_SUPPORT: 'maya_support',
   MAYA_VENGEANCE: 'maya_vengeance',
   JOSY_DRAW: 'josy_draw',
+  RUSTY_RECRUITMENT: 'rusty_recruitment',
+  RUSTY_RALLY: 'rusty_rally',
 } as const
 
 export type AbilityType = (typeof ABILITY)[keyof typeof ABILITY]
@@ -58,6 +60,8 @@ export interface AbilityContextMap {
   maya_support: SupportAbilityContext
   maya_vengeance: AllyDeathAbilityContext
   josy_draw: AbilityContext
+  rusty_recruitment: AbilityContext
+  rusty_rally: AbilityContext
 }
 
 export type AbilityPayload<C extends AbilityContext> = Omit<C, keyof AbilityContext>

@@ -3,6 +3,7 @@ export const CHARACTERS = {
   DEREK: 'derek',
   MAYA: 'maya',
   JOSY: 'josy',
+  RUSTY: 'rusty',
 } as const
 
 export type Character = (typeof CHARACTERS)[keyof typeof CHARACTERS]
