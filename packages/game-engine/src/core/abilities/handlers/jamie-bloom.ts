@@ -1,3 +1,4 @@
+import { MAX_RESERVED_ENERGY } from '../../../constants/game'
 import {
   GAME_EVENT_TYPE,
   type GameEvent,
@@ -5,8 +6,6 @@ import {
   type UnitCardInstance,
 } from '../../../types'
 import type { AbilityContext } from '../../../types/abilities.types'
-
-const MAX_RESERVED_ENERGY = 3
 
 const findWeakestAlly = (state: GameState, jamie: UnitCardInstance) => {
   const allies = state.players[jamie.ownerId]!.board.filter(

@@ -6,10 +6,11 @@ export const resolveSpellItem = (
   events: GameEvent[],
   spellItem: StackSpell,
 ): void => {
-  const handler = SPELL_REGISTRY[spellItem.spell.id]
+  const entry = SPELL_REGISTRY[spellItem.spell.id]
 
-  if (handler) {
-    handler(state, events, { spellItem })
+  if (entry) {
+    const payload = entry.payloadSchema?.parse(spellItem.payload ?? {})
+    entry.execute(state, events, { spellItem, payload })
   }
 
   const owner = state.players[spellItem.spell.ownerId]!

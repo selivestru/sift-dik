@@ -25,11 +25,13 @@ export const playSpellAction = (state: GameState, action: PlaySpellAction): Appl
     resolveSpellItem(nextState, events, {
       spell: spellCard,
       targets: action.targets,
+      payload: action.payload,
     })
   } else {
     nextState.spellStack.push({
       spell: spellCard,
       targets: action.targets,
+      payload: action.payload,
     })
     nextState.turnPlayerId = getNextPlayerId(nextState)
   }

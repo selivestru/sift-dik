@@ -33,6 +33,8 @@ export const ABILITY = {
   JAMIE_BLOOM: 'jamie_bloom',
   JACOB_MENDING: 'jacob_mending',
   TOMMY_INVITE: 'tommy_invite',
+  LEON_SWIPE: 'leon_swipe',
+  LEON_CHARM: 'leon_charm',
 } as const
 
 export type AbilityType = (typeof ABILITY)[keyof typeof ABILITY]
@@ -68,6 +70,20 @@ export interface AbilityContextMap {
   jamie_bloom: AbilityContext
   jacob_mending: AbilityContext
   tommy_invite: AbilityContext
+  leon_swipe: LeonSwipeAbilityContext
+  leon_charm: AbilityContext
+}
+
+export const SWIPER_OPTION = {
+  MUTUAL_MATCH: 'mutual_match',
+  SWIPE_LEFT: 'swipe_left',
+  SUPER_LIKE: 'super_like',
+} as const
+
+export type SwiperOption = (typeof SWIPER_OPTION)[keyof typeof SWIPER_OPTION]
+
+export interface LeonSwipeAbilityContext extends AbilityContext {
+  option: SwiperOption
 }
 
 export type AbilityPayload<C extends AbilityContext> = Omit<C, keyof AbilityContext>

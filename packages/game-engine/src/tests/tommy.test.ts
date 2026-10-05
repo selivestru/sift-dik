@@ -236,7 +236,10 @@ describe('Character: Tommy', () => {
 
   test('Guests are not summoned when there are already 6 attackers', () => {
     const state = createGame(
-      [p1Cards(), p2Cards(tommyCard, createUnit(), createUnit(), createUnit(), createUnit(), createUnit())],
+      [
+        p1Cards(),
+        p2Cards(tommyCard, createUnit(), createUnit(), createUnit(), createUnit(), createUnit()),
+      ],
       { seed: 42 },
     )
 
@@ -247,14 +250,23 @@ describe('Character: Tommy', () => {
     arrangeZones(
       state,
       p2Id,
-      ['tommy', 'unit-template', 'unit-template', 'unit-template', 'unit-template', 'unit-template'],
+      [
+        'tommy',
+        'unit-template',
+        'unit-template',
+        'unit-template',
+        'unit-template',
+        'unit-template',
+      ],
       [],
     )
 
     let currentState = state
 
     for (let i = 0; i < 6; i++) {
-      const card = currentState.players[p2Id]!.hand.find((c) => c.id === 'tommy') ?? currentState.players[p2Id]!.hand.find((c) => c.id === 'unit-template')!
+      const card =
+        currentState.players[p2Id]!.hand.find((c) => c.id === 'tommy') ??
+        currentState.players[p2Id]!.hand.find((c) => c.id === 'unit-template')!
 
       currentState = applyAction(currentState, {
         type: GAME_ACTION_TYPE.PLAY_UNIT,

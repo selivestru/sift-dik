@@ -105,6 +105,8 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
 
 ### Layer 1: Spells & Spell Stack System (COMPLETED)
 
+- **Spell payloads:** `SPELL_REGISTRY` entries are `{ execute, payloadSchema? }` — `resolveSpellItem` parses `StackSpell.payload` through the per-spell Zod schema (mirroring ability payloads); `PlaySpellAction.payload` carries the input at cast time. Spells with a payloadSchema REQUIRE it at resolution (Swiper).
+- **Direct Reputation damage:** `applyDirectReputationDamage` (resolve-combat.ts) damages a player's Reputation WITHOUT firing `ON_REPUTATION_STRIKE` — used by spell effects (Swipe Left); only actual unit strikes trigger Reputation-strike abilities.
 - **Targeting convention:** spell targets are passed positionally in `PlaySpellAction.targets?: string[]` and mirrored on `StackSpell`; the action validates that every entry exists on a board, in combat, or in the caster's hand (hand-card targets, e.g. Portrait), and each spell's handler defines the meaning of each position (e.g. Brother's Shoulder: `targets[0]` = own unit to damage, `targets[1]` = ally to buff).
 - **Action:** `PLAY_SPELL` (`src/core/actions/play-spell-action.ts`):
   - Validates turn, hand presence, card type, target presence, energy availability, and slow spell restrictions: `slow` requires empty stack AND no active combat (slow is never a reaction); playing units follows the same slow-speed rules (`play-unit-action.ts` rejects units while spells are on the stack or during combat).
@@ -201,6 +203,16 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
   - **Warm Up the Crowd (`src/catalog/spells/warm-up-the-crowd.ts`):**
     - Fast spell, Cost 1. Grants +1|+0 to all own units on board and in combat slots (reverts at round end).
     - _Test:_ `src/tests/tommy.test.ts`.
+  - **Leon (`src/catalog/characters/leon.ts`):** DIKs, Cost 2, 2|2, `elusive`.
+    - _Swipe (ON_SUMMON, Zod payload `option`):_ plays the Swiper burst spell with the player's chosen option.
+    - _Charm (ON_REPUTATION_STRIKE):_ restores 1 Reserved Energy (cap 3; no-op when full).
+    - _Test:_ `src/tests/leon.test.ts`.
+  - **Swiper (`src/catalog/spells/swiper.ts`):**
+    - Burst spell, Cost 2. Requires a payload `{ option }` (`swiperOptionPayloadSchema`); dispatches to one of three ability-option sub-spells. First spell with player input at resolution.
+    - _Test:_ `src/tests/leon.test.ts`.
+  - **Mutual Match / Swipe Left / Super Like (`src/catalog/spells/*.ts`):**
+    - Three non-deckable ability-option cards (Cost 0, only played through Swiper): draw 1 + restore 1 Reserved Energy; 1 damage to ALL enemy units + 1 to enemy Reputation; 2 damage to the strongest enemy + `stunned`.
+    - _Test:_ `src/tests/leon.test.ts`.
 - **Related cards:** every character card carries a required `relatedCards: CardId[]` field (`CardId = Character | SpellType`, defined in `card.types.ts`) — pure UI metadata linking a character to its signature cards; no game logic reads it. Filled: derek/maya/josy/rusty/jamie/jacob; tremolo is empty for now.
 
 ### Layer 1: Localization & Interactive Descriptions (COMPLETED)
@@ -254,7 +266,7 @@ src/
 │   │   └── play-unit-action.ts       # Decomposed unit summon coordinator
 │   ├── apply-action.ts               # Central action dispatcher
 │   └── create-game.ts                # Deterministic game initialization
-├── tests/                            # Vitest suites (1 test file per mechanic, 35 files total)
+├── tests/                            # Vitest suites (1 test file per mechanic, 36 files total)
 │   ├── barrier.test.ts
 │   ├── burst-speed.test.ts
 │   ├── cannot-attack.test.ts
@@ -272,6 +284,7 @@ src/
 │   ├── invulnerable.test.ts
 │   ├── jacob.test.ts
 │   ├── jamie.test.ts
+│   ├── leon.test.ts
 │   ├── josy.test.ts
 │   ├── lifesteal.test.ts
 │   ├── locales.test.ts

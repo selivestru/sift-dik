@@ -1,24 +1,7 @@
 import { CHARACTERS } from '../../../constants/characters'
-import { KEYWORD, type GameEvent, type GameState, type UnitCardInstance } from '../../../types'
+import { KEYWORD, type GameEvent, type GameState } from '../../../types'
 import type { AllyDeathAbilityContext } from '../../../types/abilities.types'
-
-const findStrongestEnemyUnit = (
-  state: GameState,
-  enemyId: string,
-): UnitCardInstance | undefined => {
-  const combatUnits = state.combat
-    ? state.combat.slots.flatMap((slot) => [slot.attacker, slot.blocker].filter(Boolean))
-    : []
-
-  const enemyUnits = [...combatUnits, ...state.players[enemyId]!.board].filter(
-    (unit): unit is UnitCardInstance =>
-      unit !== null && unit.ownerId === enemyId && unit.health > 0,
-  )
-
-  if (enemyUnits.length === 0) return undefined
-
-  return enemyUnits.reduce((strongest, unit) => (unit.attack > strongest.attack ? unit : strongest))
-}
+import { findStrongestEnemyUnit } from '../../utils/enemy-targeting'
 
 export const handleMayaVengeance = (
   state: GameState,

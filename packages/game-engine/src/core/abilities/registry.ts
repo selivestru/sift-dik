@@ -5,6 +5,8 @@ import { handleDerekSearch } from './handlers/derek-search'
 import { handleJacobMending } from './handlers/jacob-mending'
 import { handleJamieBloom } from './handlers/jamie-bloom'
 import { handleJosyDraw } from './handlers/josy-draw'
+import { handleLeonCharm } from './handlers/leon-charm'
+import { handleLeonSwipe, leonSwipePayloadSchema } from './handlers/leon-swipe'
 import { handleMayaSearch } from './handlers/maya-search'
 import { handleMayaSupport } from './handlers/maya-support'
 import { handleMayaVengeance } from './handlers/maya-vengeance'
@@ -33,4 +35,10 @@ export const ABILITIES: AbilityHandlerMap = {
   [ABILITY.JAMIE_BLOOM]: { trigger: TRIGGER.ON_ROUND_END, execute: handleJamieBloom },
   [ABILITY.JACOB_MENDING]: { trigger: TRIGGER.ON_SUMMON, execute: handleJacobMending },
   [ABILITY.TOMMY_INVITE]: { trigger: TRIGGER.ON_ATTACK, execute: handleTommyInvite },
+  [ABILITY.LEON_SWIPE]: {
+    trigger: TRIGGER.ON_SUMMON,
+    execute: handleLeonSwipe,
+    payloadSchema: leonSwipePayloadSchema,
+  },
+  [ABILITY.LEON_CHARM]: { trigger: TRIGGER.ON_REPUTATION_STRIKE, execute: handleLeonCharm },
 }

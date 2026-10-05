@@ -46,6 +46,7 @@ export interface PlaySpellAction {
   playerId: string
   cardInstanceId: string
   targets?: string[]
+  payload?: Record<string, unknown>
 }
 
 export type GameAction =

@@ -28,6 +28,7 @@ export interface CombatState {
 export interface StackSpell {
   spell: SpellCardInstance
   targets?: string[]
+  payload?: Record<string, unknown>
 }
 
 export interface GameState {

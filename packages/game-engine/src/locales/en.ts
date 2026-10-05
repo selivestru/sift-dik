@@ -46,6 +46,11 @@ export const en: Locale = {
       description:
         '{elusive}. {reputation_strike}: Draw 1 card. If it is a HOTs or DIKs faction card, reduce its cost by 1 this round.',
     },
+    [CHARACTERS.LEON]: {
+      name: 'Leon',
+      description:
+        '{elusive}. {summon}: Play the Swiper. {reputation_strike}: Restore 1 {reserved_energy}.',
+    },
     [CHARACTERS.TOMMY]: {
       name: 'Tommy',
       description: '{fury}. Attack: Summon a Guests into the fight.',
@@ -97,6 +102,22 @@ export const en: Locale = {
     [SPELL_TYPES.WARM_UP_THE_CROWD]: {
       name: 'Warm Up the Crowd',
       description: 'Give all your fighters +1|+0 this round.',
+    },
+    [SPELL_TYPES.SWIPER]: {
+      name: 'Swiper',
+      description: 'Choose and play one of 3 cards: Mutual Match, Swipe Left or Super Like.',
+    },
+    [SPELL_TYPES.MUTUAL_MATCH]: {
+      name: 'Mutual Match',
+      description: 'Draw 1 card and restore 1 {reserved_energy}.',
+    },
+    [SPELL_TYPES.SWIPE_LEFT]: {
+      name: 'Swipe Left',
+      description: 'Deal 1 damage to ALL enemy units and 1 damage to the enemy Reputation.',
+    },
+    [SPELL_TYPES.SUPER_LIKE]: {
+      name: 'Super Like',
+      description: 'Deal 2 damage to the strongest enemy and {stunned} it this round.',
     },
   },
   terms: {

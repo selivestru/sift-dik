@@ -46,6 +46,11 @@ export const ru: Locale = {
       description:
         '{elusive}. {reputation_strike}: возьмите 1 карту из колоды. Если это карта фракции СЕКСи или ДИКи, уменьшите её стоимость на 1 в этом раунде.',
     },
+    [CHARACTERS.LEON]: {
+      name: 'Леон',
+      description:
+        '{elusive}. {summon}: разыграйте карту Свайпер. {reputation_strike}: восполните 1 ед. {reserved_energy}.',
+    },
     [CHARACTERS.TOMMY]: {
       name: 'Томми',
       description: '{fury}. Атака: призовите карту Гости в бой.',
@@ -98,6 +103,23 @@ export const ru: Locale = {
     [SPELL_TYPES.WARM_UP_THE_CROWD]: {
       name: 'Разогреть толпу',
       description: 'Дайте всем вашим бойцам +1|+0 до конца раунда.',
+    },
+    [SPELL_TYPES.SWIPER]: {
+      name: 'Свайпер',
+      description:
+        'Выберите и разыграйте одну из 3 карт: Взаимный мэтч, Свайп влево или Суперлайк.',
+    },
+    [SPELL_TYPES.MUTUAL_MATCH]: {
+      name: 'Взаимный мэтч',
+      description: 'Возьмите 1 карту из колоды и восполните 1 ед. {reserved_energy}.',
+    },
+    [SPELL_TYPES.SWIPE_LEFT]: {
+      name: 'Свайп влево',
+      description: 'Нанесите 1 ед. урона ВСЕМ вражеским бойцам и 1 ед. урона Репутации оппонента.',
+    },
+    [SPELL_TYPES.SUPER_LIKE]: {
+      name: 'Суперлайк',
+      description: 'Нанесите 2 ед. урона сильнейшему врагу и {stunned} его до конца раунда.',
     },
   },
   terms: {

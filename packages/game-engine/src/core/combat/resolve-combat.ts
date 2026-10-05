@@ -27,6 +27,33 @@ export const resolveCombat = (state: GameState, events: GameEvent[]): void => {
   }
 }
 
+export const applyDirectReputationDamage = (
+  state: GameState,
+  events: GameEvent[],
+  targetPlayerId: string,
+  amount: number,
+): void => {
+  if (amount <= 0) return
+
+  const targetPlayer = state.players[targetPlayerId]!
+
+  targetPlayer.reputation -= amount
+
+  events.push({
+    type: GAME_EVENT_TYPE.DAMAGE_DEALT,
+    targetId: targetPlayer.id,
+    amount,
+    isReputation: true,
+  })
+
+  if (targetPlayer.reputation <= 0) {
+    const winnerPlayerId = Object.keys(state.players).find((id) => id !== targetPlayerId)!
+
+    state.winnerPlayerId = winnerPlayerId
+    events.push({ type: GAME_EVENT_TYPE.GAME_OVER, winnerPlayerId })
+  }
+}
+
 export const applyDamageToUnit = (
   state: GameState,
   events: GameEvent[],
