@@ -10,6 +10,7 @@ import {
 } from '../../types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
 import type { ApplyActionResult } from '../apply-action'
+import { SPELL_REGISTRY } from '../spells/registry'
 import { resolveSpellItem } from '../spells/resolve-spell-stack'
 
 export const playSpellAction = (state: GameState, action: PlaySpellAction): ApplyActionResult => {
@@ -84,8 +85,14 @@ function validatePlaySpellAction(state: GameState, action: PlaySpellAction): Spe
     )
   }
 
-  for (const targetId of action.targets ?? []) {
-    validateTargetExists(state, action.playerId, targetId)
+  const validateTargets = SPELL_REGISTRY[spellCard.id]?.validateTargets
+
+  if (validateTargets) {
+    validateTargets(state, { spell: spellCard, targets: action.targets, payload: action.payload })
+  } else {
+    for (const targetId of action.targets ?? []) {
+      validateTargetExists(state, action.playerId, targetId)
+    }
   }
 
   return spellCard

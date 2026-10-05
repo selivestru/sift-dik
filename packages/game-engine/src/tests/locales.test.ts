@@ -67,6 +67,12 @@ describe('Locales', () => {
     CHARACTERS.TOMMY,
     CHARACTERS.GUESTS,
     CHARACTERS.LEON,
+    CHARACTERS.RUSTY,
+    CHARACTERS.JOHN_BOY,
+    CHARACTERS.ELENA,
+    SPELL_TYPES.BROTHERHOOD,
+    SPELL_TYPES.SIGNATURE_DISH,
+    SPELL_TYPES.WATER_GUN,
     SPELL_TYPES.PREEMPTIVE_STRIKE,
     SPELL_TYPES.TEMP_STUN,
     SPELL_TYPES.TEMP_BURST,
@@ -97,6 +103,16 @@ describe('Locales', () => {
         const term = locale.terms[key as TermKey]
         expect(term.name.length).toBeGreaterThan(0)
         expect(term.rules.length).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  test('Every card description resolves every term key in the glossary', () => {
+    for (const locale of Object.values(LOCALES)) {
+      for (const { description } of Object.values(locale.cards)) {
+        for (const key of getTermKeys(description)) {
+          expect(locale.terms[key as TermKey]).toBeDefined()
+        }
       }
     }
   })

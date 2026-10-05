@@ -6,6 +6,7 @@ import { handleLowBlow } from './handlers/low-blow'
 import { handleMutualMatch } from './handlers/mutual-match'
 import { handlePortrait } from './handlers/portrait'
 import { handlePreemptiveStrike } from './handlers/preemptive-strike'
+import { handleSignatureDish, validateSignatureDishTargets } from './handlers/signature-dish'
 import { handleSuperLike } from './handlers/super-like'
 import { handleSwipeLeft } from './handlers/swipe-left'
 import { handleSwiper, swiperOptionPayloadSchema } from './handlers/swiper'
@@ -13,9 +14,15 @@ import { handleTempBurst } from './handlers/temp-burst'
 import { handleTempSlow } from './handlers/temp-slow'
 import { handleTempStun } from './handlers/temp-stun'
 import { handleWarmUpTheCrowd } from './handlers/warm-up-the-crowd'
+import { handleWaterGun, validateWaterGunTargets } from './handlers/water-gun'
 import { handleWillBloomAgain } from './handlers/will-bloom-again'
 
 export const SPELL_REGISTRY: Record<SpellType, SpellHandlerEntry> = {
+  [SPELL_TYPES.SIGNATURE_DISH]: {
+    execute: handleSignatureDish,
+    validateTargets: validateSignatureDishTargets,
+  },
+  [SPELL_TYPES.WATER_GUN]: { execute: handleWaterGun, validateTargets: validateWaterGunTargets },
   [SPELL_TYPES.PREEMPTIVE_STRIKE]: { execute: handlePreemptiveStrike },
   [SPELL_TYPES.TEMP_STUN]: { execute: handleTempStun },
   [SPELL_TYPES.TEMP_BURST]: { execute: handleTempBurst },

@@ -4,6 +4,25 @@ import type { Locale } from './types'
 
 export const en: Locale = {
   cards: {
+    [CHARACTERS.JOHN_BOY]: {
+      name: 'John Boy',
+      description:
+        '{support}: Fully heal me and my supported ally. If that ally is Elena, also give her {barrier} this round.',
+    },
+    [CHARACTERS.ELENA]: {
+      name: 'Elena',
+      description:
+        '{summon}: If you have a John Boy on your board, grant me and all your John Boys +1|+1. {support}: Give me and my supported ally {tough} this round.',
+    },
+    [SPELL_TYPES.SIGNATURE_DISH]: {
+      name: 'Signature Dish',
+      description: 'Fully heal an ally.',
+    },
+    [SPELL_TYPES.WATER_GUN]: {
+      name: 'Water Gun',
+      description: "Deal 1 damage to any unit or either player's {reputation}.",
+    },
+
     [CHARACTERS.TREMOLO]: {
       name: 'Tremolo',
       description:
@@ -151,7 +170,7 @@ export const en: Locale = {
     },
     support: {
       name: 'Support',
-      rules: 'When attacking, give the ally to the right +1|+1 this round.',
+      rules: 'When a support unit attacks, the unit to its right receives a boost.',
     },
     quick_attack: {
       name: 'Quick Attack',

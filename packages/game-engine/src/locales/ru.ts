@@ -4,6 +4,25 @@ import type { Locale } from './types'
 
 export const ru: Locale = {
   cards: {
+    [CHARACTERS.JOHN_BOY]: {
+      name: 'Джон Бой',
+      description:
+        '{support}: полностью исцелите меня и поддерживаемого союзника. Если это Елена, также дайте ей {barrier} до конца раунда.',
+    },
+    [CHARACTERS.ELENA]: {
+      name: 'Елена',
+      description:
+        '{summon}: если на вашем столе есть Джон Бой, навсегда дайте мне и всем вашим Джонам Боям +1|+1. {support}: я и поддерживаемый союзник получаем {tough} до конца раунда.',
+    },
+    [SPELL_TYPES.SIGNATURE_DISH]: {
+      name: 'Фирменное блюдо',
+      description: 'Полностью восстановите здоровье союзника.',
+    },
+    [SPELL_TYPES.WATER_GUN]: {
+      name: 'Водяной пистолет',
+      description: 'Нанесите 1 ед. урона любому бойцу или {reputation} любого игрока.',
+    },
+
     [CHARACTERS.TREMOLO]: {
       name: 'Тремоло',
       description:
@@ -153,7 +172,7 @@ export const ru: Locale = {
     },
     support: {
       name: 'Поддержка',
-      rules: 'При атаке даруйте союзнику справа +1|+1 в этом раунде.',
+      rules: 'Если атакует боец поддержки, боец справа от него получает усиление.',
     },
     quick_attack: {
       name: 'Быстрая атака',

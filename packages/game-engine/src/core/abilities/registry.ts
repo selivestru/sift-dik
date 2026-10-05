@@ -2,8 +2,11 @@ import { ABILITY, TRIGGER, type AbilityHandlerMap } from '../../types/abilities.
 import { handleDerekBrotherhood } from './handlers/derek-brotherhood'
 import { handleDerekRevenge } from './handlers/derek-revenge'
 import { handleDerekSearch } from './handlers/derek-search'
+import { handleElenaSummon } from './handlers/elena-summon'
+import { handleElenaSupport } from './handlers/elena-support'
 import { handleJacobMending } from './handlers/jacob-mending'
 import { handleJamieBloom } from './handlers/jamie-bloom'
+import { handleJohnBoySupport } from './handlers/john-boy-support'
 import { handleJosyDraw } from './handlers/josy-draw'
 import { handleLeonCharm } from './handlers/leon-charm'
 import { handleLeonSwipe, leonSwipePayloadSchema } from './handlers/leon-swipe'
@@ -17,6 +20,9 @@ import { handleTremoloPath, tremoloPathPayloadSchema } from './handlers/tremolo-
 import { handleTremoloSupport } from './handlers/tremolo-support'
 
 export const ABILITIES: AbilityHandlerMap = {
+  [ABILITY.JOHN_BOY_SUPPORT]: { trigger: TRIGGER.ON_ATTACK, execute: handleJohnBoySupport },
+  [ABILITY.ELENA_SUMMON]: { trigger: TRIGGER.ON_SUMMON, execute: handleElenaSummon },
+  [ABILITY.ELENA_SUPPORT]: { trigger: TRIGGER.ON_ATTACK, execute: handleElenaSupport },
   [ABILITY.TREMOLO_PATH]: {
     trigger: TRIGGER.ON_SUMMON,
     execute: handleTremoloPath,

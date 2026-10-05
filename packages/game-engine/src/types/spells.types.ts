@@ -11,6 +11,7 @@ export type SpellHandler = (state: GameState, events: GameEvent[], context: Spel
 
 export interface SpellHandlerEntry {
   execute: SpellHandler
+  validateTargets?: (state: GameState, spellItem: StackSpell) => void
   payloadSchema?: ZodType<Record<string, unknown>>
 }
 
@@ -30,6 +31,8 @@ export const SPELL_TYPES = {
   MUTUAL_MATCH: 'mutual-match',
   SWIPE_LEFT: 'swipe-left',
   SUPER_LIKE: 'super-like',
+  SIGNATURE_DISH: 'signature-dish',
+  WATER_GUN: 'water-gun',
 } as const
 
 export type SpellType = (typeof SPELL_TYPES)[keyof typeof SPELL_TYPES]

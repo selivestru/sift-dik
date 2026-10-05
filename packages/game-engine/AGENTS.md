@@ -68,6 +68,8 @@ Welcome, Agent. This document contains all essential domain knowledge, architect
 
 ## 5. Implementation Status
 
+**Verified test suite:** 38 isolated test files, 176 tests.
+
 ### Layer 0: Core Game Loop (COMPLETED)
 
 - **State Initialization:** `src/core/create-game.ts` (deterministic shuffle, mulligan/initial 4-card hand, initial initiative coin-flip, empty `spellStack`).
@@ -80,7 +82,7 @@ Welcome, Agent. This document contains all essential domain knowledge, architect
 
 ### Layer 1: Combat Keywords & Mechanics (20 KEYWORDS COMPLETED)
 
-All 17 combat keywords are implemented with dedicated isolated test suites (1 test file per keyword):
+All 20 combat keywords are implemented with dedicated isolated test suites (1 test file per keyword):
 
 1. **`quick_attack` (`src/tests/quick-attack.test.ts`):** Striking first when attacking. Eliminates blocker without taking retaliation damage if blocker dies.
 2. **`double_attack` (`src/tests/double-attack.test.ts`):** Striking twice (first strike, then simultaneous strike). Hits twice in face if unblocked.
@@ -108,6 +110,7 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
 - **Spell payloads:** `SPELL_REGISTRY` entries are `{ execute, payloadSchema? }` — `resolveSpellItem` parses `StackSpell.payload` through the per-spell Zod schema (mirroring ability payloads); `PlaySpellAction.payload` carries the input at cast time. Spells with a payloadSchema REQUIRE it at resolution (Swiper).
 - **Direct Reputation damage:** `applyDirectReputationDamage` (resolve-combat.ts) damages a player's Reputation WITHOUT firing `ON_REPUTATION_STRIKE` — used by spell effects (Swipe Left); only actual unit strikes trigger Reputation-strike abilities.
 - **Targeting convention:** spell targets are passed positionally in `PlaySpellAction.targets?: string[]` and mirrored on `StackSpell`; the action validates that every entry exists on a board, in combat, or in the caster's hand (hand-card targets, e.g. Portrait), and each spell's handler defines the meaning of each position (e.g. Brother's Shoulder: `targets[0]` = own unit to damage, `targets[1]` = ally to buff).
+- **Per-spell target validation:** optional `SpellHandlerEntry.validateTargets(state, spellItem)` runs before energy spending and hand removal, replacing generic target-presence validation for that spell. Signature Dish requires one own live unit; Water Gun requires one live unit or player. For Water Gun, `targets[0]` is a unit `instanceId` or a player id targeting Reputation. Other spells keep existing validation.
 - **Action:** `PLAY_SPELL` (`src/core/actions/play-spell-action.ts`):
   - Validates turn, hand presence, card type, target presence, energy availability, and slow spell restrictions: `slow` requires empty stack AND no active combat (slow is never a reaction); playing units follows the same slow-speed rules (`play-unit-action.ts` rejects units while spells are on the stack or during combat).
   - **Spell Mana Banking:** Spends `reservedEnergy` first, then spills over into base `energy`.
@@ -213,10 +216,25 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
   - **Mutual Match / Swipe Left / Super Like (`src/catalog/spells/*.ts`):**
     - Three non-deckable ability-option cards (Cost 0, only played through Swiper): draw 1 + restore 1 Reserved Energy; 1 damage to ALL enemy units + 1 to enemy Reputation; 2 damage to the strongest enemy + `stunned`.
     - _Test:_ `src/tests/leon.test.ts`.
-- **Related cards:** every character card carries a required `relatedCards: CardId[]` field (`CardId = Character | SpellType`, defined in `card.types.ts`) — pure UI metadata linking a character to its signature cards; no game logic reads it. Filled: derek/maya/josy/rusty/jamie/jacob; tremolo is empty for now.
+  - **John Boy (`src/catalog/characters/john-boy.ts`):** DIKs, Cost 3, 2|4, no starting keywords.
+    - _Support (ON_ATTACK):_ fully heals himself and the attacking ally immediately to his right to their current `maxHealth`. If the supported ally is Elena, grants her `barrier` this round, even if already healthy. Without a supported ally, does nothing.
+    - _Test:_ `src/tests/john-boy.test.ts`.
+  - **Signature Dish (`src/catalog/spells/signature-dish.ts`):** DIKs, Fast spell, Cost 3.
+    - Fully heals one own live unit on board or in combat. Invalid targets are rejected before casting. If the target disappears before resolution, resolves without an effect and enters the graveyard. Healthy targets produce no healing event.
+    - _Test:_ `src/tests/john-boy.test.ts`.
+  - **Elena (`src/catalog/characters/elena.ts`):** HOTs, Cost 3, 2|3, no starting keywords.
+    - _Summon (ON_SUMMON):_ if any own John Boys are on board, grants herself +1|+1 once and every own John Boy +1|+1 permanently. Base stats are unchanged; enemy units and cards in hand/deck are ignored.
+    - _Support (ON_ATTACK):_ gives herself and the attacking ally immediately to her right `tough` this round. Without a supported ally, does nothing. Permanent Tough is preserved; repeated temporary grants do not duplicate keywords.
+    - _Test:_ `src/tests/elena.test.ts`.
+  - **Water Gun (`src/catalog/spells/water-gun.ts`):** HOTs, Burst spell, Cost 1.
+    - Deals 1 damage to any live unit on board or in combat, or either player's Reputation (including the caster's). Unit damage uses `applyDamageToUnit`; Reputation damage uses `applyDirectReputationDamage` without Reputation-strike triggers. Lethal self-damage awards the opponent victory.
+    - _Test:_ `src/tests/elena.test.ts`.
+- **Related cards:** every character card carries a required `relatedCards: CardId[]` field (`CardId = Character | SpellType`, defined in `card.types.ts`) — pure UI metadata linking a character to its signature cards; no game logic reads it. Filled: derek/maya/josy/rusty/jamie/jacob/tommy/leon/john-boy/elena; tremolo is empty for now.
 
 ### Layer 1: Localization & Interactive Descriptions (COMPLETED)
+
 - **Architecture:** the engine and `GameState` stay locale-agnostic; localized strings live in the `src/locales/` layer and are resolved by card id on the client.
+- **Support glossary:** describes the card-specific effect on the attacking ally immediately to the right, without assuming a universal +1|+1 buff.
 - **Description tokens:** card descriptions contain `{term}` tokens (e.g. `{quick_attack}`, `{summon}`); the same key serves as token, glossary entry and (for mechanics) `KEYWORD` value.
 - **`parseDescription` (`src/locales/parse-description.ts`):** splits a description into `DescriptionSegment[]` (`text` / `term`) for interactive rendering (hover tooltips on UI side).
 - **Locales (`ru.ts`, `en.ts`):** each provides `cards: Record<CardId, CardStrings>` (compile-time completeness per card id) and `terms: Record<TermKey, TermEntry>` — a glossary of all keywords plus game terms (`summon`, `reputation`, `initiative`, `reserved_energy`, path terms, `support`).
@@ -230,7 +248,7 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
 ```text
 src/
 ├── catalog/                          # Card templates & definitions
-│   ├── characters/                   # Character unit cards (tremolo, derek, maya, josy, rusty, jamie, jacob, tommy, guests token)
+│   ├── characters/                   # Character unit cards (tremolo, derek, maya, josy, rusty, jamie, jacob, tommy, leon, john-boy, elena, guests token)
 │   └── spells/                       # Spell cards (e.g. preemptive-strike.ts, temp-stun.ts, temp-burst.ts, temp-slow.ts)
 ├── constants/
 │   ├── characters.ts                 # Character card ids (CHARACTERS) & Tremolo paths (TREMOLO_PATH)
@@ -266,7 +284,7 @@ src/
 │   │   └── play-unit-action.ts       # Decomposed unit summon coordinator
 │   ├── apply-action.ts               # Central action dispatcher
 │   └── create-game.ts                # Deterministic game initialization
-├── tests/                            # Vitest suites (1 test file per mechanic, 36 files total)
+├── tests/                            # Vitest suites (1 test file per mechanic, 38 files total)
 │   ├── barrier.test.ts
 │   ├── burst-speed.test.ts
 │   ├── cannot-attack.test.ts
@@ -284,6 +302,8 @@ src/
 │   ├── invulnerable.test.ts
 │   ├── jacob.test.ts
 │   ├── jamie.test.ts
+│   ├── elena.test.ts
+│   ├── john-boy.test.ts
 │   ├── leon.test.ts
 │   ├── josy.test.ts
 │   ├── lifesteal.test.ts

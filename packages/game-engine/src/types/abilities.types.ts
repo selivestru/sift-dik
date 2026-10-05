@@ -35,6 +35,9 @@ export const ABILITY = {
   TOMMY_INVITE: 'tommy_invite',
   LEON_SWIPE: 'leon_swipe',
   LEON_CHARM: 'leon_charm',
+  JOHN_BOY_SUPPORT: 'john_boy_support',
+  ELENA_SUMMON: 'elena_summon',
+  ELENA_SUPPORT: 'elena_support',
 } as const
 
 export type AbilityType = (typeof ABILITY)[keyof typeof ABILITY]
@@ -72,6 +75,9 @@ export interface AbilityContextMap {
   tommy_invite: AbilityContext
   leon_swipe: LeonSwipeAbilityContext
   leon_charm: AbilityContext
+  john_boy_support: SupportAbilityContext
+  elena_summon: AbilityContext
+  elena_support: SupportAbilityContext
 }
 
 export const SWIPER_OPTION = {
