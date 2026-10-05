@@ -32,6 +32,7 @@ export const ABILITY = {
   RUSTY_RALLY: 'rusty_rally',
   JAMIE_BLOOM: 'jamie_bloom',
   JACOB_MENDING: 'jacob_mending',
+  TOMMY_INVITE: 'tommy_invite',
 } as const
 
 export type AbilityType = (typeof ABILITY)[keyof typeof ABILITY]
@@ -66,6 +67,7 @@ export interface AbilityContextMap {
   rusty_rally: AbilityContext
   jamie_bloom: AbilityContext
   jacob_mending: AbilityContext
+  tommy_invite: AbilityContext
 }
 
 export type AbilityPayload<C extends AbilityContext> = Omit<C, keyof AbilityContext>

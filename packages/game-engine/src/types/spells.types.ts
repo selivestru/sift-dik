@@ -17,6 +17,7 @@ export const SPELL_TYPES = {
   BROTHERHOOD: 'brotherhood',
   WILL_BLOOM_AGAIN: 'will-bloom-again',
   PORTRAIT: 'portrait',
+  WARM_UP_THE_CROWD: 'warm-up-the-crowd',
 } as const
 
 export type SpellType = (typeof SPELL_TYPES)[keyof typeof SPELL_TYPES]

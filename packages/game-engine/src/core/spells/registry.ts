@@ -8,6 +8,7 @@ import { handlePreemptiveStrike } from './handlers/preemptive-strike'
 import { handleTempBurst } from './handlers/temp-burst'
 import { handleTempSlow } from './handlers/temp-slow'
 import { handleTempStun } from './handlers/temp-stun'
+import { handleWarmUpTheCrowd } from './handlers/warm-up-the-crowd'
 import { handleWillBloomAgain } from './handlers/will-bloom-again'
 
 export const SPELL_REGISTRY: Record<SpellType, SpellHandler> = {
@@ -21,4 +22,5 @@ export const SPELL_REGISTRY: Record<SpellType, SpellHandler> = {
   [SPELL_TYPES.BROTHERHOOD]: handleBrotherhood,
   [SPELL_TYPES.WILL_BLOOM_AGAIN]: handleWillBloomAgain,
   [SPELL_TYPES.PORTRAIT]: handlePortrait,
+  [SPELL_TYPES.WARM_UP_THE_CROWD]: handleWarmUpTheCrowd,
 }

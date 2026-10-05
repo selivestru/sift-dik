@@ -193,6 +193,14 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
   - **Portrait (`src/catalog/spells/portrait.ts`):**
     - Burst spell, Cost 2. Targets a card in your own hand (new target kind: hand cards pass generic target validation) and creates a copy of it in hand with cost 1 less (floor 0) and `fleeting`; hand overflow goes to the graveyard.
     - _Test:_ `src/tests/jacob.test.ts`.
+  - **Tommy (`src/catalog/characters/tommy.ts`):** DIKs, Cost 4, 4|3, `fury`.
+    - _Invite (ON_ATTACK):_ summons the token unit `Guests` (4|3, `ephemeral`) directly into combat as an attacking unit — a new `combat.slots` entry appended during attack declaration; it can be blocked by the defender and strikes this combat. No bench cap applies.
+    - _Test:_ `src/tests/tommy.test.ts`.
+  - **Guests (`src/catalog/characters/guests.ts`):** DIK token unit, Cost 2, 4|3, `ephemeral`; summoned only by Tommy's Invite. No related cards.
+    - _Test:_ `src/tests/tommy.test.ts`.
+  - **Warm Up the Crowd (`src/catalog/spells/warm-up-the-crowd.ts`):**
+    - Fast spell, Cost 1. Grants +1|+0 to all own units on board and in combat slots (reverts at round end).
+    - _Test:_ `src/tests/tommy.test.ts`.
 - **Related cards:** every character card carries a required `relatedCards: CardId[]` field (`CardId = Character | SpellType`, defined in `card.types.ts`) — pure UI metadata linking a character to its signature cards; no game logic reads it. Filled: derek/maya/josy/rusty/jamie/jacob; tremolo is empty for now.
 
 ### Layer 1: Localization & Interactive Descriptions (COMPLETED)
@@ -210,7 +218,7 @@ All 17 combat keywords are implemented with dedicated isolated test suites (1 te
 ```text
 src/
 ├── catalog/                          # Card templates & definitions
-│   ├── characters/                   # Character unit cards (tremolo, derek, maya, josy)
+│   ├── characters/                   # Character unit cards (tremolo, derek, maya, josy, rusty, jamie, jacob, tommy, guests token)
 │   └── spells/                       # Spell cards (e.g. preemptive-strike.ts, temp-stun.ts, temp-burst.ts, temp-slow.ts)
 ├── constants/
 │   ├── characters.ts                 # Character card ids (CHARACTERS) & Tremolo paths (TREMOLO_PATH)
@@ -246,7 +254,7 @@ src/
 │   │   └── play-unit-action.ts       # Decomposed unit summon coordinator
 │   ├── apply-action.ts               # Central action dispatcher
 │   └── create-game.ts                # Deterministic game initialization
-├── tests/                            # Vitest suites (1 test file per mechanic, 34 files total)
+├── tests/                            # Vitest suites (1 test file per mechanic, 35 files total)
 │   ├── barrier.test.ts
 │   ├── burst-speed.test.ts
 │   ├── cannot-attack.test.ts
@@ -279,6 +287,7 @@ src/
 │   ├── spell-stack.test.ts
 │   ├── stun.test.ts
 │   ├── tough.test.ts
+│   ├── tommy.test.ts
 │   ├── tremolo.test.ts
 │   └── vulnerable.test.ts
 ├── types/                            # TypeScript interfaces & discriminated unions

@@ -1,10 +1,10 @@
-import type { CardInstance, GameState } from '../../types'
+import type { CardDefinition, CardInstance, GameState } from '../../types'
 
 export const createCardCopy = (
   state: GameState,
   playerId: string,
-  card: CardInstance,
-  overrides: Partial<CardInstance> = {},
+  card: CardDefinition,
+  overrides: Partial<CardDefinition> = {},
 ): CardInstance => {
   const existingIds = new Set<string>()
 

@@ -10,6 +10,7 @@ import { handleMayaSupport } from './handlers/maya-support'
 import { handleMayaVengeance } from './handlers/maya-vengeance'
 import { handleRustyRally } from './handlers/rusty-rally'
 import { handleRustyRecruitment } from './handlers/rusty-recruitment'
+import { handleTommyInvite } from './handlers/tommy-invite'
 import { handleTremoloPath, tremoloPathPayloadSchema } from './handlers/tremolo-path'
 import { handleTremoloSupport } from './handlers/tremolo-support'
 
@@ -31,4 +32,5 @@ export const ABILITIES: AbilityHandlerMap = {
   [ABILITY.RUSTY_RALLY]: { trigger: TRIGGER.ON_ATTACK, execute: handleRustyRally },
   [ABILITY.JAMIE_BLOOM]: { trigger: TRIGGER.ON_ROUND_END, execute: handleJamieBloom },
   [ABILITY.JACOB_MENDING]: { trigger: TRIGGER.ON_SUMMON, execute: handleJacobMending },
+  [ABILITY.TOMMY_INVITE]: { trigger: TRIGGER.ON_ATTACK, execute: handleTommyInvite },
 }

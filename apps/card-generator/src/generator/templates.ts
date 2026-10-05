@@ -42,7 +42,7 @@ export const templates: Record<CardType, Template> = {
     ],
     text: { x: 0.115, y: UNIT_TEXT_TOP, width: 0.77, height: UNIT_STATS_TOP - UNIT_TEXT_TOP },
     energy: [0.134, 0.1],
-    faction: { x: 0.783, y: 0.044, width: 0.157, height: 0.113 },
+    faction: { x: 1147 / 1483, y: 64 / 2073, width: 268 / 1483, height: 272 / 2073 },
     attack: [0.142, 0.918],
     health: [0.855, 0.918],
   },
@@ -52,6 +52,6 @@ export const templates: Record<CardType, Template> = {
     text: { x: 0.135, y: 0.195, width: 0.73, height: 0.72 },
     textStart: 0.52,
     energy: [0.133, 0.103],
-    faction: { x: 0.803, y: 0.054, width: 0.13, height: 0.098 },
+    faction: { x: 844 / 1086, y: 55 / 1448, width: 186 / 1086, height: 186 / 1448 },
   },
 }

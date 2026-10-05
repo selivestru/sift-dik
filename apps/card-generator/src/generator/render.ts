@@ -584,7 +584,7 @@ export function renderCard(
       Math.PI * 2,
     )
     ctx.clip()
-    drawImage(ctx, images.faction, faction, 'contain')
+    ctx.drawImage(images.faction, faction.x, faction.y, faction.width, faction.height)
     ctx.restore()
   }
   return { descriptionFits: layout.fits }

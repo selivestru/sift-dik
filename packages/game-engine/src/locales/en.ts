@@ -46,6 +46,14 @@ export const en: Locale = {
       description:
         '{elusive}. {reputation_strike}: Draw 1 card. If it is a HOTs or DIKs faction card, reduce its cost by 1 this round.',
     },
+    [CHARACTERS.TOMMY]: {
+      name: 'Tommy',
+      description: '{fury}. Attack: Summon a Guests into the fight.',
+    },
+    [CHARACTERS.GUESTS]: {
+      name: 'Guests',
+      description: 'They just came for the party.',
+    },
     [CHARACTERS.JACOB]: {
       name: 'Jacob',
       description: '{tough}. {summon}: Restore 2 health to all your fighters.',
@@ -85,6 +93,10 @@ export const en: Locale = {
       name: 'Portrait',
       description:
         'Choose a card in your hand. Create a copy of it in hand with 1 less Energy cost and {fleeting}.',
+    },
+    [SPELL_TYPES.WARM_UP_THE_CROWD]: {
+      name: 'Warm Up the Crowd',
+      description: 'Give all your fighters +1|+0 this round.',
     },
   },
   terms: {

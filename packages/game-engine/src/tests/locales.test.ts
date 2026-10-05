@@ -64,6 +64,8 @@ describe('Locales', () => {
     CHARACTERS.JOSY,
     CHARACTERS.JAMIE,
     CHARACTERS.JACOB,
+    CHARACTERS.TOMMY,
+    CHARACTERS.GUESTS,
     SPELL_TYPES.PREEMPTIVE_STRIKE,
     SPELL_TYPES.TEMP_STUN,
     SPELL_TYPES.TEMP_BURST,
@@ -73,6 +75,7 @@ describe('Locales', () => {
     SPELL_TYPES.LOW_BLOW,
     SPELL_TYPES.WILL_BLOOM_AGAIN,
     SPELL_TYPES.PORTRAIT,
+    SPELL_TYPES.WARM_UP_THE_CROWD,
   ]
 
   test('Every locale provides strings for every card and term', () => {

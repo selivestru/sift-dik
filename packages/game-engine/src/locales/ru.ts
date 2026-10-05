@@ -46,6 +46,14 @@ export const ru: Locale = {
       description:
         '{elusive}. {reputation_strike}: возьмите 1 карту из колоды. Если это карта фракции СЕКСи или ДИКи, уменьшите её стоимость на 1 в этом раунде.',
     },
+    [CHARACTERS.TOMMY]: {
+      name: 'Томми',
+      description: '{fury}. Атака: призовите карту Гости в бой.',
+    },
+    [CHARACTERS.GUESTS]: {
+      name: 'Гости',
+      description: 'Они пришли просто за вечеринкой.',
+    },
     [CHARACTERS.JACOB]: {
       name: 'Джейкоб',
       description: '{tough}. {summon}: восстановите всем вашим бойцам 2 здоровья.',
@@ -86,6 +94,10 @@ export const ru: Locale = {
       name: 'Портрет',
       description:
         'Выберите карту в вашей руке. Создайте её копию в руке со стоимостью на 1 Энергию меньше с {fleeting}.',
+    },
+    [SPELL_TYPES.WARM_UP_THE_CROWD]: {
+      name: 'Разогреть толпу',
+      description: 'Дайте всем вашим бойцам +1|+0 до конца раунда.',
     },
   },
   terms: {
