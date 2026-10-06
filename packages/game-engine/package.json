@@ -3,18 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest run"
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src"
   },
   "devDependencies": {
     "@types/bun": "latest",
     "oxfmt": "^0.70.0",
     "oxlint": "^1.85.0",
-    "vitest": "^5.0.1"
-  },
-  "peerDependencies": {
     "typescript": "^7"
-  },
-  "dependencies": {
-    "zod": "^4.6.5"
   }
 }
