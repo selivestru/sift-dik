@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest'
 
 import { tempBurst } from '../catalog/spells/temp-burst'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import { GAME_ACTION_TYPE, type UnitCard } from '../types'
 import { SPELL_TYPES } from '../types/spells.types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
@@ -86,7 +87,7 @@ describe('Spell speed: Burst', () => {
     expect(burstResult.state.players[p2Id]!.energy).toBe(1)
   })
 
-  test('burst spell can be cast after blocks are declared and applies before strikes', () => {
+  test('burst spell included with an attack resolves before the defender acts', () => {
     const attackerUnit = createUnit({ id: 'attacker-unit', baseHealth: 3, health: 3, maxHealth: 3 })
     const blockerUnit = createUnit({ id: 'blocker-unit' })
 
@@ -129,42 +130,17 @@ describe('Spell speed: Burst', () => {
       type: GAME_ACTION_TYPE.DECLARE_ATTACKS,
       playerId: p2Id,
       attackers: [attackerOnBoard.instanceId],
+      spells: [{ cardInstanceId: afterP1Play.players[p2Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_BURST)!.instanceId, targets: [attackerOnBoard.instanceId] }],
     }).state
 
     const blockerOnBoard = attackState.players[p1Id]!.board.find((u) => u.id === 'blocker-unit')!
-    const blockState = applyAction(attackState, {
+    expect(attackState.spellStack).toHaveLength(0)
+    expect(attackState.turnPlayerId).toBe(p1Id)
+    expect(attackState.combat!.slots[0]!.attacker.attack).toBe(3)
+    const combatResult = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: p1Id,
-      blocks: [
-        {
-          attackerInstanceId: attackerOnBoard.instanceId,
-          defenderInstanceId: blockerOnBoard.instanceId,
-        },
-      ],
-    }).state
-
-    // Step 3: P2 buffs the blocked attacker at burst speed — instant, no reaction window
-    const burstResult = applyAction(blockState, {
-      type: GAME_ACTION_TYPE.PLAY_SPELL,
-      playerId: p2Id,
-      cardInstanceId: blockState.players[p2Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_BURST)!
-        .instanceId,
-      targets: [attackerOnBoard.instanceId],
-    })
-
-    expect(burstResult.state.spellStack).toHaveLength(0)
-    expect(burstResult.state.turnPlayerId).toBe(p2Id)
-    expect(burstResult.state.combat!.slots[0]!.attacker.attack).toBe(3)
-
-    // Step 4: Both players pass -> strikes resolve with the buff applied
-    const strikePass = applyAction(burstResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: burstResult.state.turnPlayerId,
-    }).state
-
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
+      blocks: [{ attackerInstanceId: attackerOnBoard.instanceId, defenderInstanceId: blockerOnBoard.instanceId }],
     })
 
     expect(combatResult.state.combat).toBeNull()

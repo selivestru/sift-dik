@@ -1,4 +1,5 @@
 import type { GameState, UnitCardInstance } from '../../types'
+import { compareUnitStrength } from './unit-order'
 
 export const findStrongestEnemyUnit = (
   state: GameState,
@@ -15,5 +16,5 @@ export const findStrongestEnemyUnit = (
 
   if (enemyUnits.length === 0) return undefined
 
-  return enemyUnits.reduce((strongest, unit) => (unit.attack > strongest.attack ? unit : strongest))
+  return enemyUnits.reduce((strongest, unit) => (compareUnitStrength(unit, strongest) > 0 ? unit : strongest))
 }

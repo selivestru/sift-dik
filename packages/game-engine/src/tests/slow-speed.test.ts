@@ -2,7 +2,8 @@ import { describe, expect, test } from 'vitest'
 
 import { tempSlow } from '../catalog/spells/temp-slow'
 import { tempStun } from '../catalog/spells/temp-stun'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import { GAME_ACTION_TYPE, type UnitCard } from '../types'
 import { SPELL_TYPES } from '../types/spells.types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
@@ -59,7 +60,7 @@ const createStackState = () => {
 }
 
 describe('Spell speed: Slow', () => {
-  test('slow spell resolves via the stack after both players pass', () => {
+  test('slow spell resolves when the opponent accepts the committed sequence', () => {
     const { state, p1Id, p2Id } = createStackState()
 
     // P2 passes priority so P1 can cast the slow spell
@@ -81,17 +82,15 @@ describe('Spell speed: Slow', () => {
     expect(castResult.state.spellStack).toHaveLength(1)
     expect(castResult.state.turnPlayerId).toBe(p2Id)
 
-    const declinePass = applyAction(castResult.state, {
+    const declinePassOutcome = applyAction(castResult.state, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: p2Id,
-    }).state
-
-    expect(declinePass.spellStack).toHaveLength(1)
-
-    const resolvePass = applyAction(declinePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: declinePass.turnPlayerId,
     })
+    const declinePass = declinePassOutcome.state
+
+    expect(declinePass.spellStack).toHaveLength(0)
+
+    const resolvePass = declinePassOutcome
 
     expect(resolvePass.state.spellStack).toHaveLength(0)
     const buffedUnit = resolvePass.state.players[p1Id]!.board.find((u) => u.id === 'unit-template')!

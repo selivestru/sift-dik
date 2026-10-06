@@ -18,6 +18,7 @@ export const handleJosyDraw = (
 
   if (!isAlliedFaction) return
 
-  drawnCard.cost -= 1
-  drawnCard.tempCost = (drawnCard.tempCost ?? 0) + 1
+  const reduction = Math.min(1, drawnCard.cost)
+  drawnCard.cost -= reduction
+  drawnCard.tempCost = (drawnCard.tempCost ?? 0) + reduction
 }

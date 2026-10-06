@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { battle, createGame, resolveBattle } from './scenario'
 import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
@@ -90,15 +91,9 @@ describe('Keyword: Lifesteal', () => {
     })
 
     // 3. Both players pass consecutively: combat strikes resolve
-    const strikePass = applyAction(blockResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockResult.state.turnPlayerId,
-    }).state
+    const strikePass = blockResult.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    })
+    const combatResult = blockResult
 
     // Attacker's reputation restored by dealt damage: 15 + 3 = 18
     expect(combatResult.state.players[attackerId]!.reputation).toBe(18)
@@ -110,5 +105,40 @@ describe('Keyword: Lifesteal', () => {
       amount: 3,
       isReputation: true,
     })
+  })
+})
+
+describe('Lifesteal interactions', () => {
+  test('Barrier prevents unit damage and Lifesteal healing', () => {
+    const state = battle({ keywords: [KEYWORD.LIFESTEAL] }, { keywords: [KEYWORD.BARRIER] })
+    state.players.p1!.reputation = 15
+    const result = resolveBattle(state)
+    expect(result.state.players.p1!.reputation).toBe(15)
+    expect(result.events.some((event) => event.type === 'HEAL_DEALT')).toBe(false)
+  })
+  test('Tough reduces healing to damage actually dealt', () => {
+    const state = battle({ keywords: [KEYWORD.LIFESTEAL] }, { keywords: [KEYWORD.TOUGH] })
+    state.players.p1!.reputation = 15
+    expect(resolveBattle(state).state.players.p1!.reputation).toBe(17)
+  })
+  test('healing events report the actual capped amount', () => {
+    const state = battle({ keywords: [KEYWORD.LIFESTEAL] })
+    state.players.p1!.reputation = 19
+    const result = resolveBattle(state)
+    expect(result.state.players.p1!.reputation).toBe(20)
+    expect(result.events).toContainEqual({ type: 'HEAL_DEALT', targetId: 'p1', amount: 1, isReputation: true })
+  })
+  test('Overwhelm through Barrier heals only for Nexus damage', () => {
+    const state = battle({ attack: 5, keywords: [KEYWORD.LIFESTEAL, KEYWORD.OVERWHELM] }, { health: 2, keywords: [KEYWORD.BARRIER] })
+    state.players.p1!.reputation = 10
+    const result = resolveBattle(state)
+    expect(result.state.players.p1!.reputation).toBe(13)
+    expect(result.state.players.p2!.reputation).toBe(17)
+  })
+  test('defending Lifesteal and incoming Overwhelm update Reputation simultaneously', () => {
+    const state = battle({ attack: 8, keywords: [KEYWORD.OVERWHELM] }, { attack: 3, health: 2, keywords: [KEYWORD.LIFESTEAL] })
+    const result = resolveBattle(state)
+    expect(result.state.players.p2!.reputation).toBe(17)
+    expect(result.events).toContainEqual({ type: 'HEAL_DEALT', targetId: 'p2', amount: 3, isReputation: true })
   })
 })

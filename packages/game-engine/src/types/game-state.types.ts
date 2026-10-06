@@ -16,6 +16,7 @@ export interface PlayerState {
 export interface CombatSlot {
   attacker: UnitCardInstance
   blocker: UnitCardInstance | null
+  wasBlocked?: boolean
 }
 
 export interface CombatState {
@@ -32,12 +33,17 @@ export interface StackSpell {
 }
 
 export interface GameState {
+  phase: 'mulligan' | 'playing' | 'finished'
+  randomState: number
+  mulligan: Record<string, string[] | null> | null
   players: Record<string, PlayerState>
   round: number
   initiativePlayerId: string
   turnPlayerId: string
   combat: CombatState | null
   spellStack: StackSpell[]
+  stackInitiatorPlayerId: string | null
   winnerPlayerId: string | null
+  isDraw: boolean
   consecutivePasses: number
 }

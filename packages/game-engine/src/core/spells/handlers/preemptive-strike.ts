@@ -1,3 +1,4 @@
+import { findLiveUnit } from '../../utils/find-unit'
 import { KEYWORD, type GameEvent, type GameState } from '../../../types'
 import type { SpellContext } from '../../../types/spells.types'
 
@@ -10,14 +11,7 @@ export const handlePreemptiveStrike = (
 
   if (!targetId) return
 
-  const allUnits = [
-    ...Object.values(state.players).flatMap((p) => p.board),
-    ...(state.combat
-      ? state.combat.slots.flatMap((s) => [s.attacker, s.blocker].filter(Boolean))
-      : []),
-  ]
-
-  const target = allUnits.find((u) => u?.instanceId === targetId)
+  const target = findLiveUnit(state, targetId)
 
   if (!target) return
 

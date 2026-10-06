@@ -18,7 +18,7 @@ import { resolveSpellItem } from '../spells/resolve-spell-stack'
 import { drawCard } from '../utils/draw-card'
 
 export const passAction = (state: GameState, action: PassAction): ApplyActionResult => {
-  const nextState = structuredClone(state)
+  const nextState = state
 
   validatePassAction(nextState, action)
 
@@ -60,38 +60,36 @@ function validatePassAction(state: GameState, action: PassAction): void {
   }
 }
 
-function passSpellStackPriority(state: GameState, events: GameEvent[]): void {
-  state.consecutivePasses += 1
-
-  if (state.consecutivePasses === 2) {
-    const spellItem = state.spellStack.pop()!
-    resolveSpellItem(state, events, spellItem)
-
-    state.consecutivePasses = 0
+export const resolvePendingSequence = (state: GameState, events: GameEvent[]): void => {
+  const initiator = state.stackInitiatorPlayerId ?? state.spellStack[0]?.spell.ownerId
+  while (state.spellStack.length > 0 && state.phase !== 'finished') {
+    resolveSpellItem(state, events, state.spellStack.pop()!)
   }
+  state.stackInitiatorPlayerId = null
+  state.consecutivePasses = 0
+  if (state.combat) {
+    finishCombat(state, events)
+  } else if (initiator && state.winnerPlayerId === null) {
+    state.turnPlayerId = Object.keys(state.players).find((id) => id !== initiator)!
+  }
+}
 
-  state.turnPlayerId = getNextPlayerId(state)
+function passSpellStackPriority(state: GameState, events: GameEvent[]): void {
+  if (state.combat) state.combat.blocksDeclared = true
+  resolvePendingSequence(state, events)
+}
+
+export const finishCombat = (state: GameState, events: GameEvent[]): void => {
+  const defenderId = state.combat!.defenderPlayerId
+  resolveCombat(state, events)
+  state.combat = null
+  state.consecutivePasses = 0
+  if (state.winnerPlayerId === null) state.turnPlayerId = defenderId
 }
 
 function passCombatPriority(state: GameState, events: GameEvent[]): void {
-  state.consecutivePasses += 1
-
-  if (state.consecutivePasses === 2) {
-    const attackerPlayerId = state.combat!.attackerPlayerId
-
-    resolveCombat(state, events)
-
-    state.combat = null
-    state.consecutivePasses = 0
-
-    if (state.winnerPlayerId === null) {
-      state.turnPlayerId = attackerPlayerId
-    }
-
-    return
-  }
-
-  state.turnPlayerId = getNextPlayerId(state)
+  state.combat!.blocksDeclared = true
+  finishCombat(state, events)
 }
 
 function passRoundPriority(state: GameState, events: GameEvent[]): void {
@@ -110,6 +108,7 @@ function progressRound(state: GameState, events: GameEvent[]): void {
   events.push({ type: GAME_EVENT_TYPE.ROUND_ENDED, round: state.round })
 
   triggerRoundEndAbilities(state, events)
+  if (state.winnerPlayerId !== null) return
 
   for (const playerId in state.players) {
     endPlayerRoundCleanup(state, state.players[playerId]!, events)
@@ -123,7 +122,8 @@ function progressRound(state: GameState, events: GameEvent[]): void {
 
 function triggerRoundEndAbilities(state: GameState, events: GameEvent[]): void {
   for (const playerId in state.players) {
-    for (const unit of state.players[playerId]!.board) {
+    for (const unit of state.players[playerId]!.board.slice()) {
+      if (state.winnerPlayerId !== null) return
       triggerUnitAbilities(state, events, unit, TRIGGER.ON_ROUND_END, { sourceUnit: unit })
     }
   }
@@ -138,7 +138,7 @@ function endPlayerRoundCleanup(state: GameState, player: PlayerState, events: Ga
   for (const card of player.board) {
     if (card.type !== CARD_TYPE.UNIT) continue
 
-    resetUnitRoundState(card, events)
+    resetUnitRoundState(card)
   }
 }
 
@@ -187,7 +187,7 @@ function purgeEphemeralUnits(state: GameState, player: PlayerState, events: Game
   }
 }
 
-function resetUnitRoundState(unit: UnitCardInstance, events: GameEvent[]): void {
+function resetUnitRoundState(unit: UnitCardInstance): void {
   if (unit.tempAttack) {
     unit.attack = Math.max(0, unit.attack - unit.tempAttack)
     unit.tempAttack = 0
@@ -209,7 +209,6 @@ function resetUnitRoundState(unit: UnitCardInstance, events: GameEvent[]): void 
     unit.keywords = unit.keywords.filter((k) => k !== KEYWORD.BARRIER)
   }
 
-  healRegenerationUnit(unit, events)
 }
 
 function healRegenerationUnit(unit: UnitCardInstance, events: GameEvent[]): void {
@@ -253,6 +252,11 @@ function alternateInitiative(state: GameState): void {
 function runDrawPhase(state: GameState, events: GameEvent[]): void {
   for (const playerId in state.players) {
     refreshEnergy(state.players[playerId]!, playerId, events)
+    for (const unit of state.players[playerId]!.board) {
+      healRegenerationUnit(unit, events)
+      triggerUnitAbilities(state, events, unit, TRIGGER.ON_ROUND_START, { sourceUnit: unit })
+      if (state.winnerPlayerId !== null) return
+    }
     drawCard(state, playerId, events)
 
     if (state.winnerPlayerId !== null) {

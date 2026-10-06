@@ -2,7 +2,8 @@ import { describe, expect, test } from 'vitest'
 
 import { jamieCard } from '../catalog/characters/jamie'
 import { willBloomAgain } from '../catalog/spells/will-bloom-again'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import {
   GAME_ACTION_TYPE,
   type CardDefinition,
@@ -286,14 +287,9 @@ describe('Character: Jamie', () => {
       targets: [targetInstanceId],
     })
 
-    const declinePass = applyAction(castResult.state, {
+    return applyAction(castResult.state, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: castResult.state.turnPlayerId,
-    }).state
-
-    return applyAction(declinePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: declinePass.turnPlayerId,
     })
   }
 
@@ -323,7 +319,7 @@ describe('Character: Jamie', () => {
 
     expect(() => {
       castWillBloomAgain(setup, setup.enemyOnBoard.instanceId)
-    }).toThrow('Will Bloom Again can only target your own ally')
+    }).toThrow('Target must be a live ally unit')
   })
 
   test('Will Bloom Again does nothing for a full-health ally', () => {

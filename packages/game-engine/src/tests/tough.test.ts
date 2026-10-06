@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
@@ -83,15 +84,9 @@ describe('Keyword: Tough', () => {
     })
 
     // 3. Both players pass consecutively: combat strikes resolve
-    const strikePass = applyAction(blockResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockResult.state.turnPlayerId,
-    }).state
+    const strikePass = blockResult.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    })
+    const combatResult = blockResult
 
     // Attacker (without Tough) took full 2 damage -> 3 - 2 = 1 HP
     expect(combatResult.state.players[attackerId]!.board[0]!.health).toBe(1)

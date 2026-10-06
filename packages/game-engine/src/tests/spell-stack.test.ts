@@ -2,7 +2,8 @@ import { describe, expect, test } from 'vitest'
 
 import { preemptiveStrike } from '../catalog/spells/preemptive-strike'
 import { tempStun } from '../catalog/spells/temp-stun'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import { GAME_ACTION_TYPE, KEYWORD, type UnitCard } from '../types'
 import { SPELL_TYPES } from '../types/spells.types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
@@ -22,7 +23,7 @@ const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
 })
 
 describe('Spell stack resolution', () => {
-  test('spells resolve one at a time, top of the stack first, with a reaction window between', () => {
+  test('the entire spell sequence resolves LIFO without intermediate reaction windows', () => {
     const psTarget = createUnit({ id: 'ps-target' })
 
     const state = createGame(
@@ -85,45 +86,27 @@ describe('Spell stack resolution', () => {
     expect(psCast.spellStack[1]!.spell.id).toBe(SPELL_TYPES.PREEMPTIVE_STRIKE)
 
     // Step 3: Both players pass -> only the TOP spell (Preemptive Strike) resolves
-    const firstDecline = applyAction(psCast, {
+    const firstDeclineOutcome = applyAction(psCast, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: psCast.turnPlayerId,
-    }).state
-
-    const firstResolve = applyAction(firstDecline, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: firstDecline.turnPlayerId,
     })
+    const firstDecline = firstDeclineOutcome.state
 
-    expect(firstResolve.state.spellStack).toHaveLength(1)
-    expect(firstResolve.state.spellStack[0]!.spell.id).toBe(SPELL_TYPES.TEMP_STUN)
+    const firstResolve = firstDeclineOutcome
+
+    expect(firstResolve.state.spellStack).toHaveLength(0)
     expect(firstResolve.state.players[p1Id]!.graveyard).toContainEqual(
       expect.objectContaining({ id: SPELL_TYPES.PREEMPTIVE_STRIKE }),
     )
-
-    // The resolved spell took effect immediately
+    expect(firstResolve.state.players[p2Id]!.graveyard).toContainEqual(
+      expect.objectContaining({ id: SPELL_TYPES.TEMP_STUN }),
+    )
     const buffedUnit = firstResolve.state.players[p1Id]!.board.find((u) => u.id === 'ps-target')!
     expect(buffedUnit.attack).toBe(4)
     expect(buffedUnit.health).toBe(3)
     expect(buffedUnit.keywords).toContain(KEYWORD.QUICK_ATTACK)
-
-    // Priority after resolution: opponent of the resolved spell's caster
-    expect(firstResolve.state.turnPlayerId).toBe(p2Id)
-
-    // Step 4: Both players pass again -> the stun resolves
-    const secondDecline = applyAction(firstResolve.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: firstResolve.state.turnPlayerId,
-    }).state
-
-    const secondResolve = applyAction(secondDecline, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: secondDecline.turnPlayerId,
-    })
-
-    expect(secondResolve.state.spellStack).toHaveLength(0)
-    const stunnedUnit = secondResolve.state.players[p1Id]!.board.find((u) => u.id === 'ps-target')!
-    expect(stunnedUnit.keywords).toContain(KEYWORD.STUNNED)
-    expect(secondResolve.state.round).toBe(1)
+    expect(buffedUnit.keywords).toContain(KEYWORD.STUNNED)
+    expect(firstResolve.state.turnPlayerId).toBe(p1Id)
+    expect(firstResolve.state.round).toBe(1)
   })
 })

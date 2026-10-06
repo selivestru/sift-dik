@@ -12,6 +12,7 @@ export const handleMutualMatch = (
   const player = state.players[ownerId]!
 
   drawCard(state, ownerId, events)
+  if (state.winnerPlayerId !== null) return
 
   if (player.reservedEnergy >= MAX_RESERVED_ENERGY) return
 

@@ -9,12 +9,13 @@ import { TRIGGER } from '../../types/abilities.types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
 import { triggerUnitAbilities } from '../abilities/trigger-abilities'
 import type { ApplyActionResult } from '../apply-action'
+import { playSpells } from './play-spell-action'
 
 export const declareAttacksAction = (
   state: GameState,
   action: DeclareAttacksAction,
 ): ApplyActionResult => {
-  const nextState = structuredClone(state)
+  const nextState = state
 
   validateDeclareAttacksAction(nextState, action)
   initializeCombatSlots(nextState, action)
@@ -23,6 +24,12 @@ export const declareAttacksAction = (
   const events: GameEvent[] = []
 
   triggerAttackAbilities(nextState, events)
+  if (action.spells?.length && nextState.winnerPlayerId === null) {
+    const defenderId = nextState.combat!.defenderPlayerId
+    nextState.turnPlayerId = action.playerId
+    playSpells(nextState, events, action.playerId, action.spells)
+    nextState.turnPlayerId = defenderId
+  }
 
   return {
     state: nextState,
@@ -41,6 +48,9 @@ function validateDeclareAttacksAction(state: GameState, action: DeclareAttacksAc
 
   if (state.combat !== null) {
     throw new Error('Cannot declare attacks: combat is already in progress')
+  }
+  if (state.spellStack.length > 0) {
+    throw new Error('Cannot declare attacks while spells are on the stack')
   }
 
   const playerState = state.players[action.playerId]!
@@ -134,46 +144,13 @@ function validateForcedBlockerLegality(
   pair: { attackerInstanceId: string; defenderInstanceId: string },
   blocker: UnitCardInstance,
 ): void {
-  if (blocker.keywords?.includes(KEYWORD.STUNNED)) {
-    throw new Error(
-      `Cannot declare attack: stunned unit "${blocker.instanceId}" cannot be forced to block`,
-    )
-  }
-
-  if (blocker.keywords?.includes(KEYWORD.VULNERABLE)) return
-
   const attacker = state.players[action.playerId]!.board.find(
     (unit) => unit.instanceId === pair.attackerInstanceId,
   )!
-
-  if (!attacker.keywords?.includes(KEYWORD.CHALLENGER)) {
-    throw new Error(
-      `Cannot declare attack: unit "${blocker.instanceId}" can only be forced to block by a "challenger" attacker or while having the "vulnerable" keyword`,
-    )
+  if (!blocker.keywords?.includes(KEYWORD.VULNERABLE) && !attacker.keywords?.includes(KEYWORD.CHALLENGER)) {
+    throw new Error(`Cannot declare attack: unit "${blocker.instanceId}" can only be forced to block by a "challenger" attacker or while having the "vulnerable" keyword`)
   }
 
-  if (blocker.keywords?.includes(KEYWORD.CANNOT_BLOCK)) {
-    throw new Error(
-      `Cannot declare attack: unit "${blocker.instanceId}" has the "cannot_block" keyword and cannot be forced to block`,
-    )
-  }
-
-  const attackerIsElusive = attacker.keywords?.includes(KEYWORD.ELUSIVE)
-  const blockerIsElusive = blocker.keywords?.includes(KEYWORD.ELUSIVE)
-
-  if (attackerIsElusive && !blockerIsElusive) {
-    throw new Error(
-      `Cannot declare attack: unit "${blocker.instanceId}" cannot block elusive attacker "${attacker.instanceId}"`,
-    )
-  }
-
-  const attackerIsPressure = attacker.keywords?.includes(KEYWORD.PRESSURE)
-
-  if (attackerIsPressure && blocker.attack < 3) {
-    throw new Error(
-      `Cannot declare attack: unit "${blocker.instanceId}" has less than 3 attack and cannot block pressure attacker "${attacker.instanceId}"`,
-    )
-  }
 }
 
 function assignForcedBlockers(state: GameState, action: DeclareAttacksAction): void {
@@ -191,6 +168,7 @@ function assignForcedBlockers(state: GameState, action: DeclareAttacksAction): v
       (unit) => unit.instanceId !== pair.defenderInstanceId,
     )
     slot.blocker = blocker
+    slot.wasBlocked = true
   }
 }
 

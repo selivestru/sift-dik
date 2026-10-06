@@ -4,7 +4,8 @@ import { derekCard } from '../catalog/characters/derek'
 import { mayaCard } from '../catalog/characters/maya'
 import { tremoloCard } from '../catalog/characters/tremolo'
 import { brothersShoulder } from '../catalog/spells/brothers-shoulder'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import {
   GAME_ACTION_TYPE,
   KEYWORD,
@@ -146,21 +147,16 @@ describe('Character: Derek', () => {
     expect(tremoloSlot.attacker.tempAttack).toBe(1)
     expect(tremoloSlot.attacker.tempHealth).toBe(1)
 
-    const blockState = applyAction(attackState, {
+    const blockStateOutcome = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: p1Id,
       blocks: [],
-    }).state
+    })
+    const blockState = blockStateOutcome.state
 
-    const strikePass = applyAction(blockState, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockState.turnPlayerId,
-    }).state
+    const strikePass = blockStateOutcome.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    }).state
+    const combatResult = blockStateOutcome.state
 
     const round2 = finishRound(combatResult)
 
@@ -267,7 +263,7 @@ describe('Character: Derek', () => {
 
     const blockerOnBoard = attackState.players[p1Id]!.board.find((u) => u.id === 'blocker')!
 
-    const blockState = applyAction(attackState, {
+    const blockStateOutcome = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: p1Id,
       blocks: [
@@ -276,17 +272,12 @@ describe('Character: Derek', () => {
           defenderInstanceId: blockerOnBoard.instanceId,
         },
       ],
-    }).state
+    })
+    const blockState = blockStateOutcome.state
 
-    const strikePass = applyAction(blockState, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockState.turnPlayerId,
-    }).state
+    const strikePass = blockStateOutcome.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    }).state
+    const combatResult = blockStateOutcome.state
 
     expect(combatResult.players[p2Id]!.graveyard.find((u) => u.id === 'maya')).toBeDefined()
 
@@ -372,7 +363,7 @@ describe('Character: Derek', () => {
     const blockerA = attackState.players[p1Id]!.board.find((u) => u.id === 'blocker-a')!
     const blockerB = attackState.players[p1Id]!.board.find((u) => u.id === 'blocker-b')!
 
-    const blockState = applyAction(attackState, {
+    const blockStateOutcome = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: p1Id,
       blocks: [
@@ -385,17 +376,12 @@ describe('Character: Derek', () => {
           defenderInstanceId: blockerB.instanceId,
         },
       ],
-    }).state
+    })
+    const blockState = blockStateOutcome.state
 
-    const strikePass = applyAction(blockState, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockState.turnPlayerId,
-    }).state
+    const strikePass = blockStateOutcome.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    }).state
+    const combatResult = blockStateOutcome.state
 
     const deadDerek = combatResult.players[p2Id]!.graveyard.find(
       (u): u is UnitCardInstance => u.id === 'derek',
@@ -577,7 +563,7 @@ describe('Character: Derek', () => {
         )!.instanceId,
         targets: [enemyUnit.instanceId, derekOnBoard.instanceId],
       })
-    }).toThrow("Brother's Shoulder can only deal damage to your own unit")
+    }).toThrow('Target must be a live ally unit')
   })
 })
 

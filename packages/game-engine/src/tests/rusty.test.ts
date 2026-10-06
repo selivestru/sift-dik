@@ -2,7 +2,8 @@ import { describe, expect, test } from 'vitest'
 
 import { rustyCard } from '../catalog/characters/rusty'
 import { brotherhood } from '../catalog/spells/brotherhood'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import {
   GAME_ACTION_TYPE,
   KEYWORD,
@@ -212,21 +213,16 @@ describe('Character: Rusty', () => {
       attackers: [rustyOnBoard.instanceId, allyAOnBoard.instanceId, allyBOnBoard.instanceId],
     }).state
 
-    const blockState = applyAction(attackState, {
+    const blockStateOutcome = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: p1Id,
       blocks: [],
-    }).state
+    })
+    const blockState = blockStateOutcome.state
 
-    const strikePass = applyAction(blockState, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockState.turnPlayerId,
-    }).state
+    const strikePass = blockStateOutcome.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    }).state
+    const combatResult = blockStateOutcome.state
 
     const rustyOnBoardAfter = combatResult.players[p2Id]!.board.find((u) => u.id === 'rusty')!
     const allyASlot = combatResult.players[p2Id]!.board.find((u) => u.id === 'ally-a')!
@@ -291,41 +287,25 @@ describe('Character: Rusty', () => {
       type: GAME_ACTION_TYPE.DECLARE_ATTACKS,
       playerId: p2Id,
       attackers: [rustyOnBoard.instanceId, allyOnBoard.instanceId],
+      spells: [{ cardInstanceId: p1Pass2.players[p2Id]!.hand.find((c) => c.id === 'brotherhood')!.instanceId }],
     }).state
 
-    const p1Pass3 = applyAction(attackState, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: p1Id,
-    }).state
-
-    const castResult = applyAction(p1Pass3, {
-      type: GAME_ACTION_TYPE.PLAY_SPELL,
-      playerId: p2Id,
-      cardInstanceId: p1Pass3.players[p2Id]!.hand.find((c) => c.id === SPELL_TYPES.BROTHERHOOD)!
-        .instanceId,
-    })
+    const castResult = { state: attackState, events: [] }
 
     expect(castResult.state.spellStack).toHaveLength(1)
 
-    const declinePass = applyAction(castResult.state, {
+    const declinePassOutcome = applyAction(castResult.state, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: p1Id,
-    }).state
+    })
+    const declinePass = declinePassOutcome.state
 
-    const resolved = applyAction(declinePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: declinePass.turnPlayerId,
-    }).state
+    const resolved = declinePassOutcome.state
 
-    const rustySlot = resolved.combat!.slots.find(
-      (s) => s.attacker.instanceId === rustyOnBoard.instanceId,
-    )!
-    const allySlot = resolved.combat!.slots.find(
-      (s) => s.attacker.instanceId === allyOnBoard.instanceId,
-    )!
+    expect(resolved.combat).toBeNull()
+    expect(resolved.players[p2Id]!.board.find((unit) => unit.instanceId === rustyOnBoard.instanceId)!.keywords).toContain(KEYWORD.BARRIER)
+    expect(resolved.players[p2Id]!.board.find((unit) => unit.instanceId === allyOnBoard.instanceId)!.keywords).toContain(KEYWORD.BARRIER)
 
-    expect(rustySlot.attacker.keywords).toContain(KEYWORD.BARRIER)
-    expect(allySlot.attacker.keywords).toContain(KEYWORD.BARRIER)
     expect(resolved.players[p1Id]!.board.every((u) => !u.keywords?.includes(KEYWORD.BARRIER))).toBe(
       true,
     )
@@ -360,15 +340,13 @@ describe('Character: Rusty', () => {
         .instanceId,
     })
 
-    const declinePass = applyAction(castResult.state, {
+    const declinePassOutcome = applyAction(castResult.state, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: p1Id,
-    }).state
+    })
+    const declinePass = declinePassOutcome.state
 
-    const resolved = applyAction(declinePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: declinePass.turnPlayerId,
-    }).state
+    const resolved = declinePassOutcome.state
 
     expect(resolved.players[p2Id]!.board.find((u) => u.id === 'rusty')!.keywords).toContain(
       KEYWORD.BARRIER,

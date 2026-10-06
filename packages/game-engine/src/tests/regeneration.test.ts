@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
@@ -80,15 +81,9 @@ describe('Keyword: Regeneration', () => {
     })
 
     // Both players pass consecutively to resolve the combat strikes
-    const strikePass = applyAction(blockResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockResult.state.turnPlayerId,
-    }).state
+    const strikePass = blockResult.state
 
-    const combatState = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    }).state
+    const combatState = blockResult.state
 
     // Combat passes resolve strikes but do not advance the round
     expect(combatState.round).toBe(1)

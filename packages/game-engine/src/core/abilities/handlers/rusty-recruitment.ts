@@ -1,6 +1,7 @@
 import { CARD_FACTION } from '../../../types'
 import type { GameEvent, GameState } from '../../../types'
 import type { AbilityContext } from '../../../types/abilities.types'
+import { grantCostReduction } from '../../utils/card-cost'
 
 const RECRUITMENT_DISCOUNT = 1
 
@@ -14,6 +15,6 @@ export const handleRustyRecruitment = (
   for (const card of [...player.hand, ...player.deck]) {
     if (card.faction !== CARD_FACTION.DIK) continue
 
-    card.cost = Math.max(0, card.cost - RECRUITMENT_DISCOUNT)
+    grantCostReduction(card, RECRUITMENT_DISCOUNT)
   }
 }

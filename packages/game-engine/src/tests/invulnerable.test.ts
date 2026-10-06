@@ -1,6 +1,8 @@
+import { waterGun } from '../catalog/spells/water-gun'
 import { describe, expect, test } from 'vitest'
 
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { battle, createGame, resolveBattle } from './scenario'
 import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
@@ -89,15 +91,9 @@ describe('Keyword: Invulnerable', () => {
     })
 
     // 3. Both players pass consecutively: combat strikes resolve
-    const strikePass = applyAction(blockResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockResult.state.turnPlayerId,
-    }).state
+    const strikePass = blockResult.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    })
+    const combatResult = blockResult
 
     // Invulnerable blocker took 0 damage and remains at full 2 health
     const blockerOnBoard = combatResult.state.players[defenderId]!.board[0]!
@@ -115,5 +111,14 @@ describe('Keyword: Invulnerable', () => {
       amount: 0,
       isReputation: false,
     })
+  })
+})
+
+describe('Invulnerable spell interaction', () => {
+  test('Invulnerable protects from combat damage, not spells', () => {
+    const state = battle({ keywords: [KEYWORD.INVULNERABLE] })
+    state.players.p1!.hand.push({ ...waterGun, instanceId: 'gun', ownerId: 'p1' })
+    const result = applyAction(state, { type: GAME_ACTION_TYPE.PLAY_SPELL, playerId: 'p1', cardInstanceId: 'gun', targets: ['a'] })
+    expect(result.state.players.p1!.board[0]!.health).toBe(3)
   })
 })

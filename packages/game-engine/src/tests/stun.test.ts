@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'vitest'
 
+import { preemptiveStrike } from '../catalog/spells/preemptive-strike'
 import { tempStun } from '../catalog/spells/temp-stun'
 import { MAX_REPUTATION } from '../constants/game'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { battle, createGame } from './scenario'
 import { GAME_ACTION_TYPE, KEYWORD, type UnitCard } from '../types'
 import { SPELL_TYPES } from '../types/spells.types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
@@ -176,15 +178,13 @@ describe('Keyword: Stunned', () => {
     expect(spellResult.state.spellStack).toHaveLength(1)
 
     // Step 3: P1 passes, P2 passes -> spell resolves, target is stunned
-    const declinePass = applyAction(spellResult.state, {
+    const declinePassOutcome = applyAction(spellResult.state, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: p1Id,
-    }).state
+    })
+    const declinePass = declinePassOutcome.state
 
-    const resolved = applyAction(declinePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: declinePass.turnPlayerId,
-    }).state
+    const resolved = declinePassOutcome.state
 
     const stunnedUnit = resolved.players[p1Id]!.board.find((u) => u.id === 'target-unit')!
 
@@ -218,205 +218,32 @@ describe('Keyword: Stunned', () => {
   })
 
   test('stunning an attacking unit removes it from combat and cancels its strike', () => {
-    const attackerUnit = createUnit({ id: 'attacker-unit' })
-
-    const state = createGame(
-      [
-        {
-          id: 'p1',
-          cards: [tempStun, createUnit(), createUnit(), createUnit(), createUnit()],
-        },
-        {
-          id: 'p2',
-          cards: [attackerUnit, createUnit(), createUnit(), createUnit(), createUnit()],
-        },
-      ],
-      { seed: 42 }, // p2 has initiative
-    )
-
-    const p2Id = state.turnPlayerId // p2
-    const p1Id = getNextPlayerId(state) // p1
-
-    state.players[p1Id]!.energy = 10
-
-    // Step 1: P2 plays the attacker, P1 passes
-    const afterP2Play = applyAction(state, {
-      type: GAME_ACTION_TYPE.PLAY_UNIT,
-      playerId: p2Id,
-      cardInstanceId: state.players[p2Id]!.hand.find((c) => c.id === 'attacker-unit')!.instanceId,
-    }).state
-
-    const backToP2 = applyAction(afterP2Play, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: p1Id,
-    }).state
-
-    // Step 2: P2 declares attacks -> attacker sits in combat slots
-    const attackerOnBoard = backToP2.players[p2Id]!.board.find((u) => u.id === 'attacker-unit')!
-    const attackState = applyAction(backToP2, {
-      type: GAME_ACTION_TYPE.DECLARE_ATTACKS,
-      playerId: p2Id,
-      attackers: [attackerOnBoard.instanceId],
-    }).state
-
-    expect(attackState.combat!.slots).toHaveLength(1)
-    expect(attackState.players[p2Id]!.board).toHaveLength(0)
-
-    // Step 3: P1 stuns the attacker mid-combat, P2 passes -> spell resolves
-    const spellResult = applyAction(attackState, {
-      type: GAME_ACTION_TYPE.PLAY_SPELL,
-      playerId: p1Id,
-      cardInstanceId: attackState.players[p1Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_STUN)!
-        .instanceId,
-      targets: [attackerOnBoard.instanceId],
-    })
-
-    expect(spellResult.state.spellStack[0]!.spell.id).toBe(SPELL_TYPES.TEMP_STUN)
-
-    const declinePass = applyAction(spellResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: p2Id,
-    }).state
-
-    const resolved = applyAction(declinePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: declinePass.turnPlayerId,
-    }).state
-
-    // Stunned attacker is removed from combat and returned to P2's board
-    expect(resolved.combat!.slots).toHaveLength(0)
-    const attackerBackOnBoard = resolved.players[p2Id]!.board.find((u) => u.id === 'attacker-unit')!
-    expect(attackerBackOnBoard.keywords).toContain(KEYWORD.STUNNED)
-
-    // Step 4: P2 passes, P1 declares no blocks, both pass -> combat resolves with no strike
-    const attackerPriorityPass = applyAction(resolved, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: resolved.turnPlayerId,
-    }).state
-
-    const blockResult = applyAction(attackerPriorityPass, {
-      type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
-      playerId: p1Id,
-      blocks: [],
-    })
-
-    const strikePass = applyAction(blockResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockResult.state.turnPlayerId,
-    }).state
-
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    })
-
-    expect(combatResult.state.combat).toBeNull()
-    expect(combatResult.state.players[p2Id]!.reputation).toBe(MAX_REPUTATION)
+    const state = battle()
+    state.players.p2!.hand.push({ ...tempStun, instanceId: 'stun', ownerId: 'p2' })
+    const attacked = applyAction(state, { type: GAME_ACTION_TYPE.DECLARE_ATTACKS, playerId: 'p1', attackers: ['a'] }).state
+    const reply = applyAction(attacked, { type: GAME_ACTION_TYPE.PLAY_SPELL, playerId: 'p2', cardInstanceId: 'stun', targets: ['a'] }).state
+    const resolved = applyAction(reply, { type: GAME_ACTION_TYPE.PASS, playerId: 'p1' }).state
+    expect(resolved.combat).toBeNull()
+    expect(resolved.players.p1!.board[0]!.keywords).toContain(KEYWORD.STUNNED)
+    expect(resolved.players.p2!.reputation).toBe(20)
   })
 
-  test('stunning a blocking unit removes it from combat and the attacker strikes reputation', () => {
-    const attackerUnit = createUnit({ id: 'attacker-unit' })
-    const blockerUnit = createUnit({ id: 'blocker-unit' })
-
-    const state = createGame(
-      [
-        {
-          id: 'p1',
-          cards: [blockerUnit, createUnit(), createUnit(), createUnit(), createUnit()],
-        },
-        {
-          id: 'p2',
-          cards: [attackerUnit, tempStun, createUnit(), createUnit(), createUnit()],
-        },
-      ],
-      { seed: 42 }, // p2 has initiative
-    )
-
-    const p2Id = state.turnPlayerId // p2
-    const p1Id = getNextPlayerId(state) // p1
-
-    state.players[p2Id]!.energy = 10
-
-    // Step 1: P2 plays the attacker, P1 plays the blocker
-    const afterP2Play = applyAction(state, {
-      type: GAME_ACTION_TYPE.PLAY_UNIT,
-      playerId: p2Id,
-      cardInstanceId: state.players[p2Id]!.hand.find((c) => c.id === 'attacker-unit')!.instanceId,
+  test('stunning a committed blocker leaves the attacker blocked', () => {
+    const state = battle()
+    state.players.p2!.hand.push({ ...preemptiveStrike, instanceId: 'buff', ownerId: 'p2' })
+    state.players.p1!.hand.push({ ...tempStun, instanceId: 'stun', ownerId: 'p1' })
+    const attacked = applyAction(state, { type: GAME_ACTION_TYPE.DECLARE_ATTACKS, playerId: 'p1', attackers: ['a'] }).state
+    const blocked = applyAction(attacked, {
+      type: GAME_ACTION_TYPE.DECLARE_BLOCKS, playerId: 'p2',
+      blocks: [{ attackerInstanceId: 'a', defenderInstanceId: 'b' }],
+      spells: [{ cardInstanceId: 'buff', targets: ['b'] }],
     }).state
-
-    const afterP1Play = applyAction(afterP2Play, {
-      type: GAME_ACTION_TYPE.PLAY_UNIT,
-      playerId: p1Id,
-      cardInstanceId: afterP2Play.players[p1Id]!.hand.find((c) => c.id === 'blocker-unit')!
-        .instanceId,
-    }).state
-
-    // Step 2: P2 declares attacks
-    const attackerOnBoard = afterP1Play.players[p2Id]!.board.find((u) => u.id === 'attacker-unit')!
-    const attackState = applyAction(afterP1Play, {
-      type: GAME_ACTION_TYPE.DECLARE_ATTACKS,
-      playerId: p2Id,
-      attackers: [attackerOnBoard.instanceId],
-    }).state
-
-    // Step 3: P1 blocks, P2 stuns the blocker after blocks are declared
-    const blockerOnBoard = attackState.players[p1Id]!.board.find((u) => u.id === 'blocker-unit')!
-    const blockState = applyAction(attackState, {
-      type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
-      playerId: p1Id,
-      blocks: [
-        {
-          attackerInstanceId: attackerOnBoard.instanceId,
-          defenderInstanceId: blockerOnBoard.instanceId,
-        },
-      ],
-    }).state
-
-    expect(blockState.combat!.blocksDeclared).toBe(true)
-    expect(blockState.combat!.slots[0]!.blocker).not.toBeNull()
-
-    const spellResult = applyAction(blockState, {
-      type: GAME_ACTION_TYPE.PLAY_SPELL,
-      playerId: p2Id,
-      cardInstanceId: blockState.players[p2Id]!.hand.find((c) => c.id === SPELL_TYPES.TEMP_STUN)!
-        .instanceId,
-      targets: [blockerOnBoard.instanceId],
-    })
-
-    const declinePass = applyAction(spellResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: p1Id,
-    }).state
-
-    const resolved = applyAction(declinePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: declinePass.turnPlayerId,
-    }).state
-
-    // Stunned blocker is removed from combat back to P1's board
-    expect(resolved.combat!.slots[0]!.blocker).toBeNull()
-    const blockerBackOnBoard = resolved.players[p1Id]!.board.find((u) => u.id === 'blocker-unit')!
-    expect(blockerBackOnBoard.keywords).toContain(KEYWORD.STUNNED)
-
-    // Step 4: Both players pass -> attacker strikes the reputation unblocked
-    const strikePass = applyAction(resolved, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: resolved.turnPlayerId,
-    }).state
-
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    })
-
-    expect(combatResult.state.combat).toBeNull()
-    expect(combatResult.state.players[p1Id]!.reputation).toBe(MAX_REPUTATION - 2)
-    expect(
-      combatResult.state.players[p2Id]!.board.find((u) => u.id === 'attacker-unit'),
-    ).toBeDefined()
-    expect(combatResult.state.players[p1Id]!.graveyard.find((u) => u.id === 'blocker-unit')).toBe(
-      undefined,
-    )
+    const reply = applyAction(blocked, { type: GAME_ACTION_TYPE.PLAY_SPELL, playerId: 'p1', cardInstanceId: 'stun', targets: ['b'] }).state
+    const resolved = applyAction(reply, { type: GAME_ACTION_TYPE.PASS, playerId: 'p2' }).state
+    expect(resolved.combat).toBeNull()
+    expect(resolved.players.p2!.reputation).toBe(20)
+    expect(resolved.players.p2!.board[0]!.keywords).toContain(KEYWORD.STUNNED)
+    expect(resolved.players.p1!.board[0]!.health).toBe(4)
   })
 
   test('casting stun twice does not duplicate the keyword', () => {
@@ -466,15 +293,13 @@ describe('Keyword: Stunned', () => {
       targets: [targetInstanceId],
     }).state
 
-    const firstDeclinePass = applyAction(firstCast, {
+    const firstDeclinePassOutcome = applyAction(firstCast, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: p1Id,
-    }).state
+    })
+    const firstDeclinePass = firstDeclinePassOutcome.state
 
-    const afterFirstResolve = applyAction(firstDeclinePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: firstDeclinePass.turnPlayerId,
-    }).state
+    const afterFirstResolve = firstDeclinePassOutcome.state
 
     // After the first spell resolves, priority is with its caster's opponent (p1)
     const priorityPass = applyAction(afterFirstResolve, {
@@ -490,15 +315,13 @@ describe('Keyword: Stunned', () => {
       targets: [targetInstanceId],
     }).state
 
-    const secondDeclinePass = applyAction(secondCast, {
+    const secondDeclinePassOutcome = applyAction(secondCast, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: p1Id,
-    }).state
+    })
+    const secondDeclinePass = secondDeclinePassOutcome.state
 
-    const afterSecondResolve = applyAction(secondDeclinePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: secondDeclinePass.turnPlayerId,
-    }).state
+    const afterSecondResolve = secondDeclinePassOutcome.state
 
     const stunnedUnit = afterSecondResolve.players[p1Id]!.board.find((u) => u.id === 'target-unit')!
 

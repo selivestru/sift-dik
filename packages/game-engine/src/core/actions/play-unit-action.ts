@@ -15,7 +15,7 @@ import { triggerUnitAbilities } from '../abilities/trigger-abilities'
 import type { ApplyActionResult } from '../apply-action'
 
 export const playUnitAction = (state: GameState, action: PlayUnitAction): ApplyActionResult => {
-  const nextState: GameState = structuredClone(state)
+  const nextState = state
 
   const card = validatePlayUnitAction(nextState, action)
   const abilityContexts = parseAbilityPayloads(card, action)
@@ -73,6 +73,7 @@ function validatePlayUnitAction(state: GameState, action: PlayUnitAction): UnitC
   if (card.type !== CARD_TYPE.UNIT) {
     throw new Error(`Card with instance ID "${action.cardInstanceId}" is not a unit card`)
   }
+  if (!Number.isInteger(card.cost) || card.cost < 0) throw new Error('Unit cost must be a nonnegative integer')
 
   if (playerState.energy < card.cost) {
     throw new Error(

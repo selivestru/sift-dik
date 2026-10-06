@@ -12,7 +12,7 @@ export const en: Locale = {
     [CHARACTERS.ELENA]: {
       name: 'Elena',
       description:
-        '{summon}: If you have a John Boy on your board, grant me and all your John Boys +1|+1. {support}: Give me and my supported ally {tough} this round.',
+        '{summon}: If you have a John Boy on your board, give me and all your John Boys +1|+1. {support}: Give me and my supported ally {tough} this round.',
     },
     [SPELL_TYPES.SIGNATURE_DISH]: {
       name: 'Signature Dish',
@@ -57,7 +57,7 @@ export const en: Locale = {
       name: 'Maya',
       description:
         '{summon}: Take Derek from your deck into your hand. ' +
-        '{support}: Grant the supported ally +1|+1 this round. If it is Josy or Tremolo, grant them +2|+2 instead. ' +
+        '{support}: Give the supported ally +1|+1 this round. If it is Josy or Tremolo, give them +2|+2 instead. ' +
         'Ally death: If allied Derek dies, the strongest enemy unit gains {vulnerable}.',
     },
     [CHARACTERS.JOSY]: {
@@ -91,11 +91,11 @@ export const en: Locale = {
       name: 'Rusty',
       description:
         '{regeneration}. {summon}: All allied DIKs in hand and deck cost 1 less energy. ' +
-        'Attack: Grant all attacking allies +1|+1 this round.',
+        'Attack: Give all other attacking allies +1|+1 this round.',
     },
     [SPELL_TYPES.BROTHERS_SHOULDER]: {
       name: "Brother's Shoulder",
-      description: 'Deal 1 damage to your own unit to grant an ally +2|+1 this round.',
+      description: 'Deal 1 damage to your own unit to give an ally +2|+1 this round.',
     },
     [SPELL_TYPES.ALWAYS_AND_FOREVER]: {
       name: 'Always and Forever',
@@ -107,7 +107,7 @@ export const en: Locale = {
     },
     [SPELL_TYPES.BROTHERHOOD]: {
       name: 'Brotherhood',
-      description: 'Grant all allies {barrier} this round.',
+      description: 'Give all allies {barrier} this round.',
     },
     [SPELL_TYPES.WILL_BLOOM_AGAIN]: {
       name: 'Will Bloom Again',
@@ -186,7 +186,7 @@ export const en: Locale = {
     },
     regeneration: {
       name: 'Regeneration',
-      rules: 'Fully restores health at the end of each round.',
+      rules: 'Fully restores health at the start of each round.',
     },
     tough: {
       name: 'Tough',
@@ -255,12 +255,12 @@ export const en: Locale = {
     },
     challenger: {
       name: 'Challenger',
-      rules: 'When attacking, force an enemy to block me.',
+      rules: 'When attacking, force an enemy to block me, including units that cannot block or are stunned.',
     },
     vulnerable: {
       name: 'Vulnerable',
       rules:
-        'The enemy can force this unit to block any attacker, ignoring restrictions that prevent blocking (except being stunned).',
+        'The enemy can force this unit to block any attacker, ignoring restrictions that prevent blocking, including Stun.',
     },
   },
 }

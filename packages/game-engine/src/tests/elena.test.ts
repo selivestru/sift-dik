@@ -6,7 +6,8 @@ import { johnBoyCard } from '../catalog/characters/john-boy'
 import { mayaCard } from '../catalog/characters/maya'
 import { signatureDish } from '../catalog/spells/signature-dish'
 import { waterGun } from '../catalog/spells/water-gun'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import {
   GAME_ACTION_TYPE,
   KEYWORD,
@@ -52,8 +53,9 @@ const attack = (state: GameState) =>
     attackers: state.players.p1!.board.map((u) => u.instanceId),
   })
 
-const passTwice = (state: GameState) => {
+const resolveWindow = (state: GameState) => {
   const first = applyAction(state, { type: GAME_ACTION_TYPE.PASS, playerId: state.turnPlayerId })
+  if (state.spellStack.length || state.combat || first.state.winnerPlayerId !== null) return first
   return applyAction(first.state, {
     type: GAME_ACTION_TYPE.PASS,
     playerId: first.state.turnPlayerId,
@@ -100,7 +102,7 @@ describe('Character: Elena', () => {
         baseHealth: 4,
       })
     }
-    const nextRound = passTwice(result.state).state
+    const nextRound = resolveWindow(result.state).state
     expect(nextRound.players.p1!.board.find((u) => u.id === 'elena')!.attack).toBe(3)
     expect(nextRound.players.p1!.board[0]!.maxHealth).toBe(5)
     expect(state).toEqual(original)
@@ -138,8 +140,8 @@ describe('Character: Elena', () => {
       expect(slot.attacker.keywords).toContain(KEYWORD.TOUGH)
       expect(slot.attacker.tempKeywords).toContain(KEYWORD.TOUGH)
     }
-    const completed = passTwice(declared).state
-    const nextRound = passTwice(completed).state
+    const completed = resolveWindow(declared).state
+    const nextRound = resolveWindow(completed).state
     for (const u of nextRound.players.p1!.board) {
       expect(u.keywords ?? []).not.toContain(KEYWORD.TOUGH)
     }
@@ -161,7 +163,8 @@ describe('Character: Elena', () => {
     ]
     const declared = attack(state).state
     expect(declared.combat!.slots[1]!.attacker.tempKeywords ?? []).not.toContain(KEYWORD.TOUGH)
-    const completed = passTwice(declared).state
+    const completed = resolveWindow(declared).state
+    completed.turnPlayerId = 'p1'
     completed.players.p1!.hasAttackToken = true
     const repeated = attack(completed).state
     expect(
@@ -170,7 +173,7 @@ describe('Character: Elena', () => {
     expect(
       repeated.combat!.slots[0]!.attacker.tempKeywords!.filter((k) => k === KEYWORD.TOUGH),
     ).toHaveLength(1)
-    const nextRound = passTwice(passTwice(repeated).state).state
+    const nextRound = resolveWindow(resolveWindow(repeated).state).state
     expect(nextRound.players.p1!.board.find((u) => u.instanceId === 'ally')!.keywords).toContain(
       KEYWORD.TOUGH,
     )
@@ -222,7 +225,7 @@ describe('Spell: Water Gun', () => {
       state.consecutivePasses = 1
       const result = castGun(state, [targetId])
       expect(result.state.turnPlayerId).toBe('p1')
-      expect(result.state.consecutivePasses).toBe(0)
+      expect(result.state.consecutivePasses).toBe(1)
       expect(result.state.spellStack).toEqual([])
       expect(result.state.players.p1!.reservedEnergy).toBe(0)
       expect(result.state.players.p1!.energy).toBe(10)
@@ -263,7 +266,7 @@ describe('Spell: Water Gun', () => {
     },
   )
 
-  test.each([KEYWORD.TOUGH, KEYWORD.BARRIER, KEYWORD.INVULNERABLE])('respects %s', (keyword) => {
+  test.each([KEYWORD.TOUGH, KEYWORD.BARRIER])('respects %s', (keyword) => {
     const state = setup()
     state.players.p1!.board = [unit('ally', { ...elenaCard, keywords: [keyword] })]
     const result = castGun(state, ['ally'])

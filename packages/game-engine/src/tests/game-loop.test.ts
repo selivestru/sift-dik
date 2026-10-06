@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import {
   CARD_FACTION,
   CARD_TYPE,
@@ -32,7 +33,7 @@ const createTestPlayers = (): [
 ]
 
 describe('Game Engine - Layer 0', () => {
-  test('should initialize game with valid default state', () => {
+  test('creates a valid round-one scenario for isolated mechanic tests', () => {
     const [p1, p2] = createTestPlayers()
     const state = createGame([p1, p2], { seed: 42 })
 
@@ -136,15 +137,9 @@ describe('Game Engine - Layer 0', () => {
     })
 
     // Both players pass consecutively to resolve the combat strikes
-    const strikePass = applyAction(blockResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockResult.state.turnPlayerId,
-    }).state
+    const strikePass = blockResult.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    })
+    const combatResult = blockResult
 
     // Both units dealt 2 damage to each other (3 - 2 = 1 health)
     expect(combatResult.state.players[attackerId]!.board[0]!.health).toBe(1)
@@ -155,7 +150,7 @@ describe('Game Engine - Layer 0', () => {
     expect(combatResult.state.combat).toBeNull()
     expect(combatResult.state.players[attackerId]!.reputation).toBe(20)
     expect(combatResult.state.players[defenderId]!.reputation).toBe(20)
-    expect(combatResult.state.turnPlayerId).toBe(attackerId)
+    expect(combatResult.state.turnPlayerId).toBe(defenderId)
   })
 
   test('should advance to next round after two consecutive passes', () => {

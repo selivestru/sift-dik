@@ -1,15 +1,15 @@
-import { INIT_ENERGY, MAX_REPUTATION } from '../constants/game'
+import { MAX_REPUTATION } from '../constants/game'
 import type { CardDefinition, CardInstance, GameState } from '../types'
-import { createRng } from '../utils/createRng'
+import { nextRandom } from '../utils/createRng'
 import { randomItem } from '../utils/randomItem'
 import { shuffle } from '../utils/shuffle'
 
-interface CreateGamePlayer {
+export interface CreateGamePlayer {
   id: string
   cards: CardDefinition[]
 }
 
-interface CreateGameOptions {
+export interface CreateGameOptions {
   seed?: number
 }
 
@@ -17,23 +17,49 @@ export const createGame = (
   players: [CreateGamePlayer, CreateGamePlayer],
   options?: CreateGameOptions,
 ): GameState => {
-  const rng = options?.seed ? createRng(options?.seed) : undefined
+  const random = { randomState: (options?.seed ?? 0) >>> 0 }
+  const rng = () => nextRandom(random)
+
+  if (
+    players.length !== 2 ||
+    players.some((player) => !player.id) ||
+    players[0].id === players[1].id
+  ) {
+    throw new Error('A game requires two distinct nonempty player IDs')
+  }
+
+  if (players.some((player) => player.cards.length < 4)) {
+    throw new Error('Each deck must contain at least four cards')
+  }
+
+  if (
+    options?.seed !== undefined &&
+    (!Number.isInteger(options.seed) || !Number.isFinite(options.seed))
+  ) {
+    throw new Error('Game seed must be a finite integer')
+  }
+
   const initiativePlayer = randomItem(players, rng)
 
   const gameState: GameState = {
-    players: {},
-    round: 1,
+    phase: 'mulligan',
+    randomState: random.randomState,
+    mulligan: Object.fromEntries(players.map((player) => [player.id, null])),
+    players: Object.create(null),
+    round: 0,
     initiativePlayerId: initiativePlayer.id,
     turnPlayerId: initiativePlayer.id,
     combat: null,
     spellStack: [],
+    stackInitiatorPlayerId: null,
     winnerPlayerId: null,
+    isDraw: false,
     consecutivePasses: 0,
   }
 
   for (const player of players) {
     const cardInstances: CardInstance[] = player.cards.map((card, index) => ({
-      ...card,
+      ...structuredClone(card),
       instanceId: `${player.id}-card-${index + 1}`,
       ownerId: player.id,
     }))
@@ -44,16 +70,18 @@ export const createGame = (
     gameState.players[player.id] = {
       id: player.id,
       reputation: MAX_REPUTATION,
-      maxEnergy: INIT_ENERGY,
-      energy: INIT_ENERGY,
+      maxEnergy: 0,
+      energy: 0,
       reservedEnergy: 0,
       deck: deckCards,
       hand: handCards,
       board: [],
       graveyard: [],
-      hasAttackToken: gameState.initiativePlayerId === player.id,
+      hasAttackToken: false,
     }
   }
+
+  gameState.randomState = random.randomState
 
   return gameState
 }

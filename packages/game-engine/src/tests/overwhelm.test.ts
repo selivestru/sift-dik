@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { battle, createGame, resolveBattle } from './scenario'
 import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
@@ -89,15 +90,9 @@ describe('Keyword: Overwhelm', () => {
     })
 
     // 3. Both players pass consecutively: combat strikes resolve
-    const strikePass = applyAction(blockResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockResult.state.turnPlayerId,
-    }).state
+    const strikePass = blockResult.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    })
+    const combatResult = blockResult
 
     // Blocker dies (2 HP - 2 dmg = 0)
     expect(combatResult.state.players[defenderId]!.board).toHaveLength(0)
@@ -123,5 +118,18 @@ describe('Keyword: Overwhelm', () => {
       amount: 3,
       isReputation: true,
     })
+  })
+})
+
+describe('Overwhelm defensive interactions', () => {
+  test('Barrier prevents the assigned unit damage but not the excess Nexus damage', () => {
+    const result = resolveBattle(battle({ attack: 5, keywords: [KEYWORD.OVERWHELM] }, { health: 2, keywords: [KEYWORD.BARRIER] }))
+    expect(result.state.players.p2!.board[0]!.health).toBe(2)
+    expect(result.state.players.p2!.reputation).toBe(17)
+  })
+  test('Tough raises the blocker lethal threshold by one', () => {
+    const result = resolveBattle(battle({ attack: 5, keywords: [KEYWORD.OVERWHELM] }, { health: 2, keywords: [KEYWORD.TOUGH] }))
+    expect(result.state.players.p2!.reputation).toBe(18)
+    expect(result.state.players.p2!.graveyard.some((unit) => unit.instanceId === 'b')).toBe(true)
   })
 })

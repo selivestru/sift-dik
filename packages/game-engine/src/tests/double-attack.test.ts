@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { battle, createGame, resolveBattle } from './scenario'
 import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
@@ -80,15 +81,9 @@ describe('Keyword: Double Attack', () => {
       blocks: [{ attackerInstanceId: attackingUnitId, defenderInstanceId: defendingUnitId }],
     })
 
-    const strikePass = applyAction(blockResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockResult.state.turnPlayerId,
-    }).state
+    const strikePass = blockResult.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    })
+    const combatResult = blockResult
 
     // Strike 1: 5 - 2 = 3 HP
     // Strike 2: 3 - 2 = 1 HP, and blocker deals 1 damage to attacker: 2 - 1 = 1 HP
@@ -116,5 +111,28 @@ describe('Keyword: Double Attack', () => {
         isReputation: false,
       },
     ])
+  })
+})
+
+describe('Double Attack interactions', () => {
+  test('a killed blocker remains a ghost block for the second strike', () => {
+    const result = resolveBattle(battle({ attack: 3, keywords: [KEYWORD.DOUBLE_ATTACK] }, { health: 1 }))
+    expect(result.state.players.p2!.reputation).toBe(20)
+    expect(result.state.players.p1!.board[0]!.health).toBe(4)
+  })
+  test('Overwhelm hits the Nexus on both strikes after the blocker dies', () => {
+    const result = resolveBattle(battle({ attack: 3, keywords: [KEYWORD.DOUBLE_ATTACK, KEYWORD.OVERWHELM] }, { health: 1 }))
+    expect(result.state.players.p2!.reputation).toBe(15)
+  })
+  test('Fury from the first kill increases the second Overwhelm strike', () => {
+    const result = resolveBattle(battle({ attack: 3, keywords: [KEYWORD.DOUBLE_ATTACK, KEYWORD.OVERWHELM, KEYWORD.FURY] }, { health: 1 }))
+    expect(result.state.players.p2!.reputation).toBe(14)
+    expect(result.state.players.p1!.board[0]!.attack).toBe(4)
+  })
+  test('an Ephemeral double attacker dies after the first strike', () => {
+    const result = resolveBattle(battle({ attack: 3, keywords: [KEYWORD.DOUBLE_ATTACK, KEYWORD.EPHEMERAL] }), false)
+    expect(result.state.players.p2!.reputation).toBe(17)
+    expect(result.state.players.p1!.board).toHaveLength(0)
+    expect(result.state.players.p1!.graveyard.filter((unit) => unit.instanceId === 'a')).toHaveLength(1)
   })
 })

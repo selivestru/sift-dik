@@ -6,6 +6,7 @@ import {
   type UnitCardInstance,
 } from '../../../types'
 import type { AbilityContext } from '../../../types/abilities.types'
+import { compareUnitStrength } from '../../utils/unit-order'
 
 const findWeakestAlly = (state: GameState, jamie: UnitCardInstance) => {
   const allies = state.players[jamie.ownerId]!.board.filter(
@@ -14,7 +15,7 @@ const findWeakestAlly = (state: GameState, jamie: UnitCardInstance) => {
 
   if (allies.length === 0) return undefined
 
-  return allies.reduce((weakest, ally) => (ally.attack < weakest.attack ? ally : weakest))
+  return allies.reduce((weakest, ally) => (compareUnitStrength(ally, weakest) < 0 ? ally : weakest))
 }
 
 export const handleJamieBloom = (

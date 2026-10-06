@@ -1,16 +1,10 @@
-import { KEYWORD, type GameEvent, type GameState } from '../../../types'
+import { findLiveUnit } from '../../utils/find-unit'
+import { type GameEvent, type GameState } from '../../../types'
 import type { SpellContext } from '../../../types/spells.types'
 import { applyDamageToUnit } from '../../combat/resolve-combat'
+import { stunUnit } from '../../combat/stun-unit'
 import { findStrongestEnemyUnit } from '../../utils/enemy-targeting'
 
-const findUnit = (state: GameState, unitId: string) => {
-  const boardUnits = Object.values(state.players).flatMap((player) => player.board)
-  const combatUnits = state.combat
-    ? state.combat.slots.flatMap((slot) => [slot.attacker, slot.blocker].filter(Boolean))
-    : []
-
-  return [...boardUnits, ...combatUnits].find((unit) => unit?.instanceId === unitId)
-}
 
 export const handleSuperLike = (
   state: GameState,
@@ -26,16 +20,9 @@ export const handleSuperLike = (
 
   applyDamageToUnit(state, events, strongestEnemy, 2)
 
-  const stunnedTarget = findUnit(state, strongestEnemy.instanceId)
+  const stunnedTarget = findLiveUnit(state, strongestEnemy.instanceId)
 
   if (!stunnedTarget) return
 
-  if (!stunnedTarget.keywords) {
-    stunnedTarget.keywords = []
-  }
-
-  if (!stunnedTarget.keywords.includes(KEYWORD.STUNNED)) {
-    stunnedTarget.keywords.push(KEYWORD.STUNNED)
-    stunnedTarget.tempKeywords = [...(stunnedTarget.tempKeywords ?? []), KEYWORD.STUNNED]
-  }
+  stunUnit(state, stunnedTarget)
 }

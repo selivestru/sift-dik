@@ -18,7 +18,7 @@ export const handleTommyInvite = (
 
   if (!combat) return
 
-  if (combat.slots.length >= MAX_UNITS_ON_BOARD_PER_PLAYER) return
+  if (combat.slots.length + state.players[context.sourceUnit.ownerId]!.board.length >= MAX_UNITS_ON_BOARD_PER_PLAYER) return
 
   const guests = createCardCopy(state, context.sourceUnit.ownerId, guestsCard) as UnitCardInstance
 

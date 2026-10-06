@@ -2,7 +2,8 @@ import { describe, expect, test } from 'vitest'
 
 import { tremoloCard } from '../catalog/characters/tremolo'
 import { TREMOLO_PATH, type TremoloPath } from '../constants/characters'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 
 const createUnit = (overrides: Partial<UnitCard> = {}): UnitCard => ({
@@ -132,15 +133,9 @@ describe('Character: Tremolo', () => {
       blocks: [],
     })
 
-    const strikePass = applyAction(combatResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: combatResult.state.turnPlayerId,
-    }).state
+    const strikePass = combatResult.state
 
-    const resolvedCombat = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    }).state
+    const resolvedCombat = combatResult.state
 
     const allyAfterCombat = resolvedCombat.players.p2!.board.find((u) => u.id === 'freshman-ally')!
     expect(allyAfterCombat.attack).toBe(3)

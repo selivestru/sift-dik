@@ -12,7 +12,7 @@ export const getCardStrings = (locale: Locale, cardId: CardId): CardStrings => {
   const strings = locale.cards[cardId]
 
   if (!strings) {
-    throw new Error(`Locale "${locale}" has no strings for card "${cardId}"`)
+    throw new Error(`Locale has no strings for card "${cardId}"`)
   }
 
   return strings

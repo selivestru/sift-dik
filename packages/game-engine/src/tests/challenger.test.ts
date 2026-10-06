@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import { GAME_ACTION_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
@@ -75,21 +76,16 @@ describe('Keyword: Challenger', () => {
       attackState.players[setup.p1Id]!.board.find((u) => u.id === 'victim-unit'),
     ).toBeUndefined()
 
-    const blockState = applyAction(attackState, {
+    const blockStateOutcome = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: setup.p1Id,
       blocks: [],
-    }).state
-
-    const strikePass = applyAction(blockState, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockState.turnPlayerId,
-    }).state
-
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
     })
+    const blockState = blockStateOutcome.state
+
+    const strikePass = blockStateOutcome.state
+
+    const combatResult = blockStateOutcome
 
     expect(combatResult.state.combat).toBeNull()
     expect(
@@ -123,81 +119,37 @@ describe('Keyword: Challenger', () => {
     )
   })
 
-  test('challenger cannot force a unit with cannot_block to block', () => {
-    const challengerUnit = createUnit({ id: 'challenger-unit', keywords: [KEYWORD.CHALLENGER] })
-    const pacifistUnit = createUnit({ id: 'pacifist-unit', keywords: [KEYWORD.CANNOT_BLOCK] })
-
-    const setup = setupCombat(challengerUnit, pacifistUnit)
-
-    expect(() => {
-      applyAction(setup.state, {
-        type: GAME_ACTION_TYPE.DECLARE_ATTACKS,
-        playerId: setup.p2Id,
-        attackers: [setup.attacker.instanceId],
-        forcedBlockers: [
-          {
-            attackerInstanceId: setup.attacker.instanceId,
-            defenderInstanceId: setup.victim.instanceId,
-          },
-        ],
-      })
-    }).toThrow(
-      `Cannot declare attack: unit "${setup.victim.instanceId}" has the "cannot_block" keyword and cannot be forced to block`,
-    )
+  test('challenger can force a unit with cannot_block to block', () => {
+    const setup = setupCombat(createUnit({ keywords: [KEYWORD.CHALLENGER] }), createUnit({ keywords: [KEYWORD.CANNOT_BLOCK] }))
+    const result = applyAction(setup.state, {
+      type: GAME_ACTION_TYPE.DECLARE_ATTACKS,
+      playerId: setup.p2Id,
+      attackers: [setup.attacker.instanceId],
+      forcedBlockers: [{ attackerInstanceId: setup.attacker.instanceId, defenderInstanceId: setup.victim.instanceId }],
+    })
+    expect(result.state.combat!.slots[0]!.blocker!.instanceId).toBe(setup.victim.instanceId)
   })
 
-  test('challenger cannot force a non-elusive unit to block an elusive attacker', () => {
-    const elusiveChallenger = createUnit({
-      id: 'elusive-challenger',
-      keywords: [KEYWORD.CHALLENGER, KEYWORD.ELUSIVE],
+  test('challenger can force a non-elusive unit to block an elusive attacker', () => {
+    const setup = setupCombat(createUnit({ keywords: [KEYWORD.CHALLENGER, KEYWORD.ELUSIVE] }), createUnit())
+    const result = applyAction(setup.state, {
+      type: GAME_ACTION_TYPE.DECLARE_ATTACKS,
+      playerId: setup.p2Id,
+      attackers: [setup.attacker.instanceId],
+      forcedBlockers: [{ attackerInstanceId: setup.attacker.instanceId, defenderInstanceId: setup.victim.instanceId }],
     })
-    const victimUnit = createUnit({ id: 'victim-unit' })
-
-    const setup = setupCombat(elusiveChallenger, victimUnit)
-
-    expect(() => {
-      applyAction(setup.state, {
-        type: GAME_ACTION_TYPE.DECLARE_ATTACKS,
-        playerId: setup.p2Id,
-        attackers: [setup.attacker.instanceId],
-        forcedBlockers: [
-          {
-            attackerInstanceId: setup.attacker.instanceId,
-            defenderInstanceId: setup.victim.instanceId,
-          },
-        ],
-      })
-    }).toThrow(
-      `Cannot declare attack: unit "${setup.victim.instanceId}" cannot block elusive attacker "${setup.attacker.instanceId}"`,
-    )
+    expect(result.state.combat!.slots[0]!.blocker!.instanceId).toBe(setup.victim.instanceId)
   })
 
-  test('challenger respects pressure when forcing a blocker', () => {
-    const pressureChallenger = createUnit({
-      id: 'pressure-challenger',
-      attack: 5,
-      baseAttack: 5,
-      keywords: [KEYWORD.CHALLENGER, KEYWORD.PRESSURE],
+  test('challenger overrides pressure when forcing a blocker', () => {
+    const setup = setupCombat(createUnit({ keywords: [KEYWORD.CHALLENGER, KEYWORD.PRESSURE] }), createUnit({ attack: 1 }))
+    const result = applyAction(setup.state, {
+      type: GAME_ACTION_TYPE.DECLARE_ATTACKS,
+      playerId: setup.p2Id,
+      attackers: [setup.attacker.instanceId],
+      forcedBlockers: [{ attackerInstanceId: setup.attacker.instanceId, defenderInstanceId: setup.victim.instanceId }],
     })
-    const weakVictim = createUnit({ id: 'weak-victim', attack: 2 })
-
-    const setup = setupCombat(pressureChallenger, weakVictim)
-
-    expect(() => {
-      applyAction(setup.state, {
-        type: GAME_ACTION_TYPE.DECLARE_ATTACKS,
-        playerId: setup.p2Id,
-        attackers: [setup.attacker.instanceId],
-        forcedBlockers: [
-          {
-            attackerInstanceId: setup.attacker.instanceId,
-            defenderInstanceId: setup.victim.instanceId,
-          },
-        ],
-      })
-    }).toThrow(
-      `Cannot declare attack: unit "${setup.victim.instanceId}" has less than 3 attack and cannot block pressure attacker "${setup.attacker.instanceId}"`,
-    )
+    expect(result.state.combat!.slots[0]!.blocker!.instanceId).toBe(setup.victim.instanceId)
   })
 
   test('defender cannot assign a blocker to a slot that already has a forced blocker', () => {

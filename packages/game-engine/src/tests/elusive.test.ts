@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import { GAME_ACTION_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
@@ -134,15 +135,9 @@ describe('Keyword: Elusive', () => {
     })
 
     // Both players pass consecutively to resolve the combat strikes
-    const strikePass = applyAction(validBlockResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: validBlockResult.state.turnPlayerId,
-    }).state
+    const strikePass = validBlockResult.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    })
+    const combatResult = validBlockResult
 
     expect(combatResult.state.combat).toBeNull()
   })

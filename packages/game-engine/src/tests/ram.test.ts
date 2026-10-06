@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { battle, createGame, resolveBattle } from './scenario'
 import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
@@ -84,15 +85,9 @@ describe('Keyword: Ram', () => {
     })
 
     // 3. Both players pass consecutively: combat strikes resolve
-    const strikePass = applyAction(blockResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockResult.state.turnPlayerId,
-    }).state
+    const strikePass = blockResult.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    })
+    const combatResult = blockResult
 
     // Blocker took 2 damage -> 5 - 2 = 3 HP (survived)
     expect(combatResult.state.players[defenderId]!.board[0]!.health).toBe(3)
@@ -110,5 +105,12 @@ describe('Keyword: Ram', () => {
       amount: 1,
       isReputation: true,
     })
+  })
+})
+
+describe('Ram strike eligibility', () => {
+  test('a zero-power attacker does not trigger Ram', () => {
+    const result = resolveBattle(battle({ attack: 0, keywords: [KEYWORD.RAM] }), false)
+    expect(result.state.players.p2!.reputation).toBe(20)
   })
 })

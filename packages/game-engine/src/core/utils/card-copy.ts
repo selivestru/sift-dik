@@ -21,6 +21,9 @@ export const createCardCopy = (
       existingIds.add(slot.blocker.instanceId)
     }
   }
+  for (const item of state.spellStack) {
+    existingIds.add(item.spell.instanceId)
+  }
 
   let index = 0
 
@@ -29,8 +32,8 @@ export const createCardCopy = (
   }
 
   return {
-    ...card,
-    ...overrides,
+    ...structuredClone(card),
+    ...structuredClone(overrides),
     instanceId: `${playerId}-copy-${index}`,
     ownerId: playerId,
   } as CardInstance

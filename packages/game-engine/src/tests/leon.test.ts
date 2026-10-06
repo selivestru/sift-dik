@@ -2,7 +2,8 @@ import { describe, expect, test } from 'vitest'
 
 import { leonCard } from '../catalog/characters/leon'
 import { swiperCard } from '../catalog/spells/swiper'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import {
   GAME_ACTION_TYPE,
   KEYWORD,
@@ -351,21 +352,16 @@ describe('Character: Leon', () => {
       attackers: [leonOnBoard.instanceId],
     }).state
 
-    const blockState = applyAction(attackState, {
+    const blockStateOutcome = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: p1Id,
       blocks: [],
-    }).state
-
-    const strikePass = applyAction(blockState, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockState.turnPlayerId,
-    }).state
-
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
     })
+    const blockState = blockStateOutcome.state
+
+    const strikePass = blockStateOutcome.state
+
+    const combatResult = blockStateOutcome
 
     expect(combatResult.state.players[p1Id]!.reputation).toBe(18)
     expect(combatResult.state.players[p2Id]!.reservedEnergy).toBe(2)

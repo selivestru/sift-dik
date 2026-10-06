@@ -5,7 +5,8 @@ import { josyCard } from '../catalog/characters/josy'
 import { mayaCard } from '../catalog/characters/maya'
 import { tremoloCard } from '../catalog/characters/tremolo'
 import { alwaysAndForever } from '../catalog/spells/always-and-forever'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import {
   GAME_ACTION_TYPE,
   KEYWORD,
@@ -53,6 +54,7 @@ const finishRound = (state: GameState): GameState => {
     type: GAME_ACTION_TYPE.PASS,
     playerId: state.turnPlayerId,
   }).state
+  if (pass1.round !== state.round || pass1.winnerPlayerId !== null) return pass1
 
   return applyAction(pass1, {
     type: GAME_ACTION_TYPE.PASS,
@@ -311,7 +313,7 @@ describe('Character: Maya', () => {
 
     const strongBlocker = attackState.players[p1Id]!.board.find((u) => u.id === 'strong-blocker')!
 
-    const blockState = applyAction(attackState, {
+    const blockStateOutcome = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: p1Id,
       blocks: [
@@ -320,17 +322,12 @@ describe('Character: Maya', () => {
           defenderInstanceId: strongBlocker.instanceId,
         },
       ],
-    }).state
+    })
+    const blockState = blockStateOutcome.state
 
-    const strikePass = applyAction(blockState, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockState.turnPlayerId,
-    }).state
+    const strikePass = blockStateOutcome.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    }).state
+    const combatResult = blockStateOutcome.state
 
     expect(combatResult.players[p2Id]!.graveyard.find((u) => u.id === 'derek')).toBeDefined()
 
@@ -347,13 +344,14 @@ describe('Character: Maya', () => {
 
   test('Always and Forever grants Barrier that expires at round end', () => {
     const state = createGame(
-      [p1Cards(), { id: 'p2', cards: [mayaCard, derekCard, alwaysAndForever] }],
+      [p1Cards(createUnit(), createUnit()), { id: 'p2', cards: [mayaCard, derekCard, alwaysAndForever, createUnit(), createUnit(), createUnit()] }],
       { seed: 42 },
     )
 
     const p2Id = state.turnPlayerId
     const p1Id = getNextPlayerId(state)
 
+    arrangeZones(state, p2Id, ['maya', 'always-and-forever'], ['derek', 'unit-template'])
     state.players[p2Id]!.energy = 10
 
     const afterMaya = applyAction(state, {

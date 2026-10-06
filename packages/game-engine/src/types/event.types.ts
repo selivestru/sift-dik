@@ -72,7 +72,7 @@ export interface RoundEndedEvent {
 
 export interface GameOverEvent {
   type: typeof GAME_EVENT_TYPE.GAME_OVER
-  winnerPlayerId: string
+  winnerPlayerId: string | null
 }
 
 export type GameEvent =

@@ -1,6 +1,7 @@
 import { type GameEvent, type GameState, type UnitCardInstance } from '../../../types'
+import { applyDamageToUnits } from '../../combat/damage'
 import type { SpellContext } from '../../../types/spells.types'
-import { applyDamageToUnit, applyDirectReputationDamage } from '../../combat/resolve-combat'
+import { applyDirectReputationDamage } from '../../combat/resolve-combat'
 
 export const handleSwipeLeft = (
   state: GameState,
@@ -19,9 +20,7 @@ export const handleSwipeLeft = (
     ...combatUnits.filter((unit): unit is UnitCardInstance => unit !== null),
   ].filter((unit) => unit.ownerId === opponentId)
 
-  for (const enemy of [...enemyUnits]) {
-    applyDamageToUnit(state, events, enemy, 1)
-  }
+  applyDamageToUnits(state, events, enemyUnits, 1)
 
   applyDirectReputationDamage(state, events, opponentId, 1)
 }

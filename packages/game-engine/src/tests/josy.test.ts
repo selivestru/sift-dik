@@ -2,7 +2,8 @@ import { describe, expect, test } from 'vitest'
 
 import { josyCard } from '../catalog/characters/josy'
 import { lowBlow } from '../catalog/spells/low-blow'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import {
   GAME_ACTION_TYPE,
   KEYWORD,
@@ -76,20 +77,10 @@ const attackUnblockedWithJosy = (state: GameState, p1Id: string, p2Id: string) =
     attackers: [josyOnBoard.instanceId],
   }).state
 
-  const blockState = applyAction(attackState, {
+  return applyAction(attackState, {
     type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
     playerId: p1Id,
     blocks: [],
-  }).state
-
-  const strikePass = applyAction(blockState, {
-    type: GAME_ACTION_TYPE.PASS,
-    playerId: blockState.turnPlayerId,
-  }).state
-
-  return applyAction(strikePass, {
-    type: GAME_ACTION_TYPE.PASS,
-    playerId: strikePass.turnPlayerId,
   })
 }
 
@@ -256,14 +247,9 @@ describe('Character: Josy', () => {
       targets: [targetInstanceId],
     })
 
-    const declinePass = applyAction(castResult.state, {
+    return applyAction(castResult.state, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: castResult.state.turnPlayerId,
-    }).state
-
-    return applyAction(declinePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: declinePass.turnPlayerId,
     })
   }
 
@@ -326,6 +312,6 @@ describe('Character: Josy', () => {
 
     expect(() => {
       castLowBlow(setup, josyOnBoard.instanceId)
-    }).toThrow('Low Blow can only target an enemy unit')
+    }).toThrow('Target must be a live enemy unit')
   })
 })

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import { GAME_ACTION_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
@@ -77,21 +78,16 @@ describe('Keyword: Vulnerable', () => {
       attackState.players[setup.p1Id]!.board.find((u) => u.id === 'vulnerable-unit'),
     ).toBeUndefined()
 
-    const blockState = applyAction(attackState, {
+    const blockStateOutcome = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: setup.p1Id,
       blocks: [],
-    }).state
-
-    const strikePass = applyAction(blockState, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockState.turnPlayerId,
-    }).state
-
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
     })
+    const blockState = blockStateOutcome.state
+
+    const strikePass = blockStateOutcome.state
+
+    const combatResult = blockStateOutcome
 
     expect(combatResult.state.combat).toBeNull()
     expect(
@@ -144,7 +140,7 @@ describe('Keyword: Vulnerable', () => {
     expect(attackState.combat!.slots[0]!.blocker!.instanceId).toBe(setup.victim.instanceId)
   })
 
-  test('stunned vulnerable unit cannot be forced to block', () => {
+  test('stunned vulnerable unit can be forced to block', () => {
     const attackerUnit = createUnit({ id: 'attacker-unit' })
     const vulnerableUnit = createUnit({
       id: 'vulnerable-unit',
@@ -153,10 +149,7 @@ describe('Keyword: Vulnerable', () => {
 
     const setup = setupCombat(attackerUnit, vulnerableUnit)
 
-    expect(() => {
-      forceBlock(setup)
-    }).toThrow(
-      `Cannot declare attack: stunned unit "${setup.victim.instanceId}" cannot be forced to block`,
-    )
+    const result = forceBlock(setup)
+    expect(result.state.combat!.slots[0]!.blocker!.instanceId).toBe(setup.victim.instanceId)
   })
 })

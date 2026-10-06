@@ -7,6 +7,7 @@ import {
   type TriggerType,
 } from '../../types/abilities.types'
 import { ABILITIES } from './registry'
+import { gameIsOver } from '../end-game'
 
 export const triggerUnitAbilities = <C extends AbilityContext>(
   state: GameState,
@@ -16,14 +17,15 @@ export const triggerUnitAbilities = <C extends AbilityContext>(
   baseContext: C,
   abilityContexts?: AbilityContextInput,
 ): void => {
-  if (!unit.abilities) return
+  if (gameIsOver(state) || !unit.abilities) return
 
   for (const abilityId of unit.abilities) {
     const handler = ABILITIES[abilityId] as AbilityHandler<AbilityContext> | undefined
 
+    if (gameIsOver(state)) return
     if (handler && handler.trigger === trigger) {
       const payload = abilityContexts?.[abilityId] ?? {}
-      handler.execute(state, events, { ...baseContext, ...payload })
+      handler.execute(state, events, { ...payload, ...baseContext })
     }
   }
 }
@@ -46,7 +48,7 @@ export const notifyAllyDeath = (
       unit.health > 0,
   )
 
-  for (const ally of alliedUnits) {
+  for (const ally of new Map(alliedUnits.map((unit) => [unit.instanceId, unit])).values()) {
     triggerUnitAbilities(state, events, ally, TRIGGER.ON_ALLY_DEATH, {
       sourceUnit: ally,
       deadUnit,

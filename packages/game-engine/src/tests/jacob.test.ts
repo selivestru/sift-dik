@@ -3,7 +3,8 @@ import { describe, expect, test } from 'vitest'
 import { jacobCard } from '../catalog/characters/jacob'
 import { portrait } from '../catalog/spells/portrait'
 import { willBloomAgain } from '../catalog/spells/will-bloom-again'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import {
   GAME_ACTION_TYPE,
   KEYWORD,
@@ -289,7 +290,7 @@ describe('Character: Jacob', () => {
 
     expect(() => {
       castPortrait(setup, setup.jacobOnBoard.instanceId)
-    }).toThrow(`Portrait target card "${setup.jacobOnBoard.instanceId}" is not in your hand`)
+    }).toThrow('Target must be another card in your hand')
   })
 
   test('Portrait cannot target a card in the enemy hand', () => {
@@ -300,7 +301,7 @@ describe('Character: Jacob', () => {
     expect(() => {
       castPortrait(setup, enemyCard.instanceId)
     }).toThrow(
-      `Target with instance ID "${enemyCard.instanceId}" not found on board, in combat or in hand`,
+      'Target must be another card in your hand',
     )
   })
 })

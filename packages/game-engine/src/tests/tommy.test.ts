@@ -2,7 +2,8 @@ import { describe, expect, test } from 'vitest'
 
 import { tommyCard } from '../catalog/characters/tommy'
 import { warmUpTheCrowd } from '../catalog/spells/warm-up-the-crowd'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import {
   GAME_ACTION_TYPE,
   KEYWORD,
@@ -101,21 +102,16 @@ describe('Character: Tommy', () => {
       expect.objectContaining({ type: 'UNIT_SPAWNED', playerId: p2Id }),
     )
 
-    const blockState = applyAction(attackState, {
+    const blockStateOutcome = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: p1Id,
       blocks: [],
-    }).state
+    })
+    const blockState = blockStateOutcome.state
 
-    const strikePass = applyAction(blockState, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockState.turnPlayerId,
-    }).state
+    const strikePass = blockStateOutcome.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    }).state
+    const combatResult = blockStateOutcome.state
 
     expect(combatResult.players[p1Id]!.reputation).toBe(12)
     expect(combatResult.players[p2Id]!.graveyard.find((u) => u.id === 'guests')).toBeDefined()
@@ -157,7 +153,7 @@ describe('Character: Tommy', () => {
     const guestsSlot = attackState.combat!.slots.find((slot) => slot.attacker.id === 'guests')!
     const blockerOnBoard = attackState.players[p1Id]!.board.find((u) => u.id === 'blocker')!
 
-    const blockState = applyAction(attackState, {
+    const blockStateOutcome = applyAction(attackState, {
       type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
       playerId: p1Id,
       blocks: [
@@ -166,17 +162,12 @@ describe('Character: Tommy', () => {
           defenderInstanceId: blockerOnBoard.instanceId,
         },
       ],
-    }).state
+    })
+    const blockState = blockStateOutcome.state
 
-    const strikePass = applyAction(blockState, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockState.turnPlayerId,
-    }).state
+    const strikePass = blockStateOutcome.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    }).state
+    const combatResult = blockStateOutcome.state
 
     expect(combatResult.players[p2Id]!.graveyard.find((u) => u.id === 'guests')).toBeDefined()
     expect(combatResult.players[p1Id]!.graveyard.find((u) => u.id === 'blocker')).toBeDefined()
@@ -346,15 +337,13 @@ describe('Character: Tommy', () => {
 
     expect(castResult.state.spellStack).toHaveLength(1)
 
-    const declinePass = applyAction(castResult.state, {
+    const declinePassOutcome = applyAction(castResult.state, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: p1Id,
-    }).state
+    })
+    const declinePass = declinePassOutcome.state
 
-    const resolved = applyAction(declinePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: declinePass.turnPlayerId,
-    }).state
+    const resolved = declinePassOutcome.state
 
     expect(
       resolved.players[p2Id]!.board.find((u) => u.instanceId === tommyOnBoard.instanceId)!.attack,
@@ -410,53 +399,28 @@ describe('Character: Tommy', () => {
       type: GAME_ACTION_TYPE.DECLARE_ATTACKS,
       playerId: p2Id,
       attackers: [tommyOnBoard.instanceId],
+      spells: [{ cardInstanceId: p1Pass2.players[p2Id]!.hand.find((c) => c.id === 'warm-up-the-crowd')!.instanceId }],
     }).state
 
-    const p1Pass3 = applyAction(attackState, {
+    const castResult = { state: attackState, events: [] }
+
+    const declinePassOutcome = applyAction(castResult.state, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: p1Id,
-    }).state
-
-    const castResult = applyAction(p1Pass3, {
-      type: GAME_ACTION_TYPE.PLAY_SPELL,
-      playerId: p2Id,
-      cardInstanceId: p1Pass3.players[p2Id]!.hand.find((c) => c.id === 'warm-up-the-crowd')!
-        .instanceId,
     })
+    const declinePass = declinePassOutcome.state
 
-    const declinePass = applyAction(castResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: p1Id,
-    }).state
+    const resolved = declinePassOutcome.state
 
-    const resolved = applyAction(declinePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: declinePass.turnPlayerId,
-    }).state
-
-    const tommySlot = findSlot(resolved, tommyOnBoard.instanceId)!
+    const tommyAfterCombat = resolved.players[p2Id]!.board.find((unit) => unit.instanceId === tommyOnBoard.instanceId)!
     const allyOnBoardAfter = resolved.players[p2Id]!.board.find(
       (u) => u.instanceId === allyOnBoard.instanceId,
     )!
 
-    expect(tommySlot.attacker.attack).toBe(5)
+    expect(tommyAfterCombat.attack).toBe(5)
     expect(allyOnBoardAfter.attack).toBe(3)
 
-    const blockState = applyAction(resolved, {
-      type: GAME_ACTION_TYPE.DECLARE_BLOCKS,
-      playerId: p1Id,
-      blocks: [],
-    }).state
-
-    const strikePass = applyAction(blockState, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockState.turnPlayerId,
-    }).state
-
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    }).state
+    const combatResult = resolved
 
     const round2 = finishRound(combatResult)
 

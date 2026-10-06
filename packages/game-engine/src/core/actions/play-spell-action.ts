@@ -1,48 +1,64 @@
 import {
   CARD_TYPE,
+  GAME_ACTION_TYPE,
   GAME_EVENT_TYPE,
   SPELL_SPEED,
   type GameEvent,
   type GameState,
   type PlaySpellAction,
+  type PlaySpellsAction,
+  type SpellPlay,
   type PlayerState,
   type SpellCardInstance,
 } from '../../types'
 import { getNextPlayerId } from '../../utils/getNextPlayerId'
+import { MAX_SPELL_STACK_SIZE } from '../../constants/game'
 import type { ApplyActionResult } from '../apply-action'
 import { SPELL_REGISTRY } from '../spells/registry'
 import { resolveSpellItem } from '../spells/resolve-spell-stack'
+import { validateSpellTargets } from '../spells/validate-spell-targets'
 
 export const playSpellAction = (state: GameState, action: PlaySpellAction): ApplyActionResult => {
-  const nextState: GameState = structuredClone(state)
+  return playSpellsAction(state, { type: GAME_ACTION_TYPE.PLAY_SPELLS, playerId: action.playerId, spells: [action] })
+}
 
-  const spellCard = validatePlaySpellAction(nextState, action)
+export const playSpellsAction = (state: GameState, action: PlaySpellsAction): ApplyActionResult => {
   const events: GameEvent[] = []
-
-  spendSpellCost(nextState.players[action.playerId]!, events, action.playerId, spellCard.cost)
-  removeSpellFromHand(nextState, action)
-
-  if (spellCard.speed === SPELL_SPEED.BURST) {
-    resolveSpellItem(nextState, events, {
-      spell: spellCard,
-      targets: action.targets,
-      payload: action.payload,
-    })
-  } else {
-    nextState.spellStack.push({
-      spell: spellCard,
-      targets: action.targets,
-      payload: action.payload,
-    })
-    nextState.turnPlayerId = getNextPlayerId(nextState)
+  const addedFastSpells = playSpells(state, events, action.playerId, action.spells)
+  if (addedFastSpells && state.winnerPlayerId === null) {
+    if (state.combat && !state.combat.blocksDeclared) state.combat.blocksDeclared = true
+    state.turnPlayerId = getNextPlayerId(state)
+    state.consecutivePasses = 0
   }
+  return { state, events }
+}
 
-  nextState.consecutivePasses = 0
-
-  return {
-    state: nextState,
-    events,
+export const playSpells = (state: GameState, events: GameEvent[], playerId: string, spells: SpellPlay[]): boolean => {
+  if (new Set(spells.map((item) => item.cardInstanceId)).size !== spells.length) {
+    throw new Error('A spell batch cannot contain duplicate card instances')
   }
+  if (spells.length === 0) throw new Error('A spell batch must contain at least one spell')
+  let addedStackItem = false
+  for (const choice of spells) {
+    if (state.phase === 'finished') break
+    const action: PlaySpellAction = { ...choice, type: GAME_ACTION_TYPE.PLAY_SPELL, playerId }
+    const spellCard = validatePlaySpellAction(state, action)
+    spendSpellCost(state.players[playerId]!, events, playerId, spellCard.cost)
+    removeSpellFromHand(state, action)
+    const item = {
+      spell: spellCard,
+      targets: choice.targets ? [...choice.targets] : undefined,
+      payload: choice.payload ? structuredClone(choice.payload) : undefined,
+    }
+    if (spellCard.speed === SPELL_SPEED.BURST || spellCard.speed === SPELL_SPEED.FOCUS) {
+      resolveSpellItem(state, events, item)
+    } else {
+      if (state.spellStack.length === 0) state.stackInitiatorPlayerId = playerId
+      state.spellStack.push(item)
+      addedStackItem = true
+    }
+  }
+  return addedStackItem
 }
 
 function validatePlaySpellAction(state: GameState, action: PlaySpellAction): SpellCardInstance {
@@ -69,12 +85,16 @@ function validatePlaySpellAction(state: GameState, action: PlaySpellAction): Spe
   }
 
   const spellCard = card as SpellCardInstance
+  if (!Number.isInteger(spellCard.cost) || spellCard.cost < 0) throw new Error('Spell cost must be a nonnegative integer')
+  if ((spellCard.speed === SPELL_SPEED.FAST || spellCard.speed === SPELL_SPEED.SLOW) && state.spellStack.length >= MAX_SPELL_STACK_SIZE) {
+    throw new Error('Spell stack is full')
+  }
 
-  if (spellCard.speed === SPELL_SPEED.SLOW && state.combat !== null) {
+  if ((spellCard.speed === SPELL_SPEED.SLOW || spellCard.speed === SPELL_SPEED.FOCUS) && state.combat !== null) {
     throw new Error('Cannot play slow spell while combat is in progress')
   }
 
-  if (spellCard.speed === SPELL_SPEED.SLOW && state.spellStack.length > 0) {
+  if ((spellCard.speed === SPELL_SPEED.SLOW || spellCard.speed === SPELL_SPEED.FOCUS) && state.spellStack.length > 0) {
     throw new Error('Cannot play slow spell while other spells are on the stack')
   }
 
@@ -86,37 +106,17 @@ function validatePlaySpellAction(state: GameState, action: PlaySpellAction): Spe
   }
 
   const validateTargets = SPELL_REGISTRY[spellCard.id]?.validateTargets
+  const entry = SPELL_REGISTRY[spellCard.id]
+  if (!entry) throw new Error(`Unknown spell "${spellCard.id}"`)
+  entry.payloadSchema?.parse(action.payload ?? {})
 
   if (validateTargets) {
     validateTargets(state, { spell: spellCard, targets: action.targets, payload: action.payload })
   } else {
-    for (const targetId of action.targets ?? []) {
-      validateTargetExists(state, action.playerId, targetId)
-    }
+    validateSpellTargets(state, { spell: spellCard, targets: action.targets })
   }
 
   return spellCard
-}
-
-function validateTargetExists(state: GameState, casterId: string, targetId: string): void {
-  const allBoardUnits = Object.values(state.players).flatMap((p) => p.board)
-  const combatUnits = state.combat
-    ? state.combat.slots.flatMap((s) => [s.attacker, s.blocker].filter(Boolean))
-    : []
-
-  const isUnitTarget = [...allBoardUnits, ...combatUnits].some(
-    (unit) => unit?.instanceId === targetId,
-  )
-
-  if (isUnitTarget) return
-
-  const isHandCardTarget = state.players[casterId]!.hand.some(
-    (card) => card.instanceId === targetId,
-  )
-
-  if (isHandCardTarget) return
-
-  throw new Error(`Target with instance ID "${targetId}" not found on board, in combat or in hand`)
 }
 
 function spendSpellCost(

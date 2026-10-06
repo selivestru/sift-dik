@@ -75,6 +75,7 @@ export interface UnitCardInstance extends UnitCard {
 
 export const SPELL_SPEED = {
   BURST: 'burst',
+  FOCUS: 'focus',
   FAST: 'fast',
   SLOW: 'slow',
 } as const

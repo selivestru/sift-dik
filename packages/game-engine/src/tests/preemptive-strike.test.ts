@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest'
 
 import { preemptiveStrike } from '../catalog/spells/preemptive-strike'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import { GAME_ACTION_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
@@ -86,15 +87,13 @@ describe('Spell: Preemptive Strike', () => {
     expect(spellResult.state.turnPlayerId).toBe(p1Id)
 
     // Step 3: P1 passes, P2 passes -> Spell stack resolves!
-    const p1Pass = applyAction(spellResult.state, {
+    const p1PassOutcome = applyAction(spellResult.state, {
       type: GAME_ACTION_TYPE.PASS,
       playerId: p1Id,
-    }).state
-
-    const passResult = applyAction(p1Pass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: p1Pass.turnPlayerId,
     })
+    const p1Pass = p1PassOutcome.state
+
+    const passResult = p1PassOutcome
 
     // Stack is empty, spell moved to graveyard
     expect(passResult.state.spellStack).toHaveLength(0)

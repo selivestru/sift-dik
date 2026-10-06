@@ -4,7 +4,8 @@ import { elenaCard } from '../catalog/characters/elena'
 import { johnBoyCard } from '../catalog/characters/john-boy'
 import { signatureDish } from '../catalog/spells/signature-dish'
 import { waterGun } from '../catalog/spells/water-gun'
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { createGame } from './scenario'
 import {
   GAME_ACTION_TYPE,
   KEYWORD,
@@ -35,8 +36,9 @@ const setup = (): GameState => {
   return state
 }
 
-const passTwice = (state: GameState) => {
+const resolveWindow = (state: GameState) => {
   const first = applyAction(state, { type: GAME_ACTION_TYPE.PASS, playerId: state.turnPlayerId })
+  if (state.spellStack.length || state.combat || first.state.winnerPlayerId !== null) return first
   return applyAction(first.state, {
     type: GAME_ACTION_TYPE.PASS,
     playerId: first.state.turnPlayerId,
@@ -107,8 +109,8 @@ describe('Character: John Boy', () => {
     const declared = attack(state)
     expect(declared.events).toEqual([])
     expect(declared.state.combat!.slots[1]!.attacker.keywords).toContain(KEYWORD.BARRIER)
-    const completed = passTwice(declared.state).state
-    const nextRound = passTwice(completed).state
+    const completed = resolveWindow(declared.state).state
+    const nextRound = resolveWindow(completed).state
     expect(
       nextRound.players.p1!.board.find((u) => u.instanceId === 'elena')!.keywords ?? [],
     ).not.toContain(KEYWORD.BARRIER)
@@ -127,7 +129,8 @@ describe('Character: John Boy', () => {
     })
     expect(damaged.state.combat!.slots[1]!.attacker.health).toBe(3)
     expect(damaged.state.combat!.slots[1]!.attacker.keywords ?? []).not.toContain(KEYWORD.BARRIER)
-    const finished = passTwice(damaged.state).state
+    const finished = resolveWindow(damaged.state).state
+    finished.turnPlayerId = 'p1'
     finished.players.p1!.hasAttackToken = true
     const repeated = attack(finished)
     const elena = repeated.state.combat!.slots[1]!.attacker
@@ -137,7 +140,7 @@ describe('Character: John Boy', () => {
 })
 
 describe('Spell: Signature Dish', () => {
-  test('heals a board ally after two passes, spends Reserved Energy first and enters graveyard', () => {
+  test('heals a board ally when the opponent accepts the sequence, spends Reserved Energy first and enters graveyard', () => {
     const state = setup()
     state.players.p1!.board = [unit('john')]
     state.players.p1!.board[0]!.health = 1
@@ -148,7 +151,7 @@ describe('Spell: Signature Dish', () => {
     expect(cast.state.players.p1!.energy).toBe(9)
     expect(cast.state.turnPlayerId).toBe('p2')
     expect(cast.state.spellStack).toHaveLength(1)
-    const resolved = passTwice(cast.state)
+    const resolved = resolveWindow(cast.state)
     expect(resolved.state.players.p1!.board[0]!.health).toBe(4)
     expect(resolved.events).toContainEqual({
       type: 'HEAL_DEALT',
@@ -175,16 +178,17 @@ describe('Spell: Signature Dish', () => {
         },
       ],
     }
-    const result = passTwice(castDish(state, ['ally']).state)
-    const slot = result.state.combat!.slots[0]!
-    expect((role === 'attacker' ? slot.attacker : slot.blocker)!.health).toBe(4)
+    const result = resolveWindow(castDish(state, ['ally']).state)
+    expect(result.state.combat).toBeNull()
+    expect(result.state.players.p1!.board.find((unit) => unit.instanceId === 'ally')!.health).toBe(2)
+    expect(result.events).toContainEqual({ type: 'HEAL_DEALT', targetId: 'ally', amount: 3, isReputation: false })
     expect(result.state.round).toBe(1)
   })
 
   test('a healthy ally produces no healing event', () => {
     const state = setup()
     state.players.p1!.board = [unit('john')]
-    expect(passTwice(castDish(state, ['john']).state).events).toEqual([])
+    expect(resolveWindow(castDish(state, ['john']).state).events).toEqual([])
   })
 
   test.each([undefined, [], ['unknown'], ['p1'], ['p2'], ['dish'], ['enemy'], ['john', 'john']])(
@@ -211,7 +215,7 @@ describe('Spell: Signature Dish', () => {
       cardInstanceId: 'gun',
       targets: ['john'],
     })
-    const resolved = passTwice(response.state)
+    const resolved = resolveWindow(response.state)
     expect(resolved.events).toEqual([])
     expect(resolved.state.spellStack).toEqual([])
     expect(resolved.state.players.p1!.graveyard.map((c) => c.instanceId)).toEqual(['john', 'dish'])

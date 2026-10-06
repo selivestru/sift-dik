@@ -1,17 +1,8 @@
+import { findLiveUnit } from '../../utils/find-unit'
 import { type GameEvent, type GameState, type UnitCardInstance } from '../../../types'
 import type { SpellContext } from '../../../types/spells.types'
 import { applyDamageToUnit } from '../../combat/resolve-combat'
 
-const findUnit = (state: GameState, unitId: string): UnitCardInstance | undefined => {
-  const boardUnits = Object.values(state.players).flatMap((player) => player.board)
-  const combatUnits = state.combat
-    ? state.combat.slots.flatMap((slot) => [slot.attacker, slot.blocker].filter(Boolean))
-    : []
-
-  return [...boardUnits, ...combatUnits].find(
-    (unit): unit is UnitCardInstance => unit !== null && unit.instanceId === unitId,
-  )
-}
 
 export const handleBrothersShoulder = (
   state: GameState,
@@ -24,25 +15,25 @@ export const handleBrothersShoulder = (
     throw new Error("Brother's Shoulder requires a unit to damage and an ally to buff")
   }
 
-  const damageTarget = findUnit(state, damageTargetId)
+  const damageTarget = findLiveUnit(state, damageTargetId)
 
   if (!damageTarget) {
-    throw new Error(`Brother's Shoulder target unit "${damageTargetId}" not found`)
+    return
   }
 
   if (damageTarget.ownerId !== casterId) {
     throw new Error("Brother's Shoulder can only deal damage to your own unit")
   }
 
-  const buffTarget = findUnit(state, buffTargetId)
+  const buffTarget = findLiveUnit(state, buffTargetId)
 
-  if (!buffTarget || buffTarget.ownerId !== casterId) {
+  if (buffTarget && buffTarget.ownerId !== casterId) {
     throw new Error("Brother's Shoulder can only buff your own ally")
   }
 
   applyDamageToUnit(state, events, damageTarget, 1)
 
-  const buffedAlly = findUnit(state, buffTargetId)
+  const buffedAlly = findLiveUnit(state, buffTargetId)
 
   if (!buffedAlly) return
 

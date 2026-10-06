@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import { applyAction, createGame } from '../core'
+import { applyAction } from '../core'
+import { battle, createGame, resolveBattle } from './scenario'
 import { GAME_ACTION_TYPE, GAME_EVENT_TYPE, KEYWORD, type UnitCard } from '../types'
 import { getNextPlayerId } from '../utils/getNextPlayerId'
 
@@ -86,15 +87,9 @@ describe('Keyword: Ephemeral', () => {
       blocks: [{ attackerInstanceId: attackingUnitId, defenderInstanceId: defendingUnitId }],
     })
 
-    const strikePass = applyAction(blockResult.state, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: blockResult.state.turnPlayerId,
-    }).state
+    const strikePass = blockResult.state
 
-    const combatResult = applyAction(strikePass, {
-      type: GAME_ACTION_TYPE.PASS,
-      playerId: strikePass.turnPlayerId,
-    })
+    const combatResult = blockResult
 
     // Both units should be dead and in graveyard
     expect(combatResult.state.players[defenderId]!.board).toHaveLength(0)
@@ -163,5 +158,18 @@ describe('Keyword: Ephemeral', () => {
       type: GAME_EVENT_TYPE.UNIT_DIED,
       unitInstanceId: ephemeralInstanceId,
     })
+  })
+})
+
+describe('Ephemeral strike eligibility', () => {
+  test('a zero-power Ephemeral unit does not strike or die during combat', () => {
+    const result = resolveBattle(battle({ attack: 0, keywords: [KEYWORD.EPHEMERAL] }))
+    expect(result.state.players.p1!.board[0]!.health).toBe(3)
+    expect(result.state.players.p1!.graveyard).toHaveLength(0)
+  })
+  test('an Ephemeral blocker cannot strike after its Quick Attack opponent dies', () => {
+    const result = resolveBattle(battle({ keywords: [KEYWORD.QUICK_ATTACK, KEYWORD.EPHEMERAL] }, { health: 10, keywords: [KEYWORD.EPHEMERAL] }))
+    expect(result.state.players.p1!.graveyard.some((unit) => unit.instanceId === 'a')).toBe(true)
+    expect(result.state.players.p2!.board[0]!.instanceId).toBe('b')
   })
 })

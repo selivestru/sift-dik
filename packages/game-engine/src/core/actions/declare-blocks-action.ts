@@ -1,26 +1,28 @@
 import { KEYWORD, type DeclareBlocksAction, type GameState } from '../../types'
 import type { ApplyActionResult } from '../apply-action'
+import { finishCombat, resolvePendingSequence } from './pass-action'
+import { playSpells } from './play-spell-action'
 
 export const declareBlocksAction = (
   state: GameState,
   action: DeclareBlocksAction,
 ): ApplyActionResult => {
-  const nextState = structuredClone(state)
+  const nextState = state
 
   validateDeclareBlocksAction(nextState, action)
   assignBlockersToCombatSlots(nextState, action)
 
   nextState.combat!.blocksDeclared = true
   nextState.consecutivePasses = 0
-
+  const events: ApplyActionResult['events'] = []
+  const addedSpells = action.spells?.length ? playSpells(nextState, events, action.playerId, action.spells) : false
   if (nextState.winnerPlayerId === null) {
-    nextState.turnPlayerId = nextState.combat!.attackerPlayerId
+    if (addedSpells) nextState.turnPlayerId = nextState.combat!.attackerPlayerId
+    else if (nextState.spellStack.length > 0) resolvePendingSequence(nextState, events)
+    else finishCombat(nextState, events)
   }
+  return { state: nextState, events }
 
-  return {
-    state: nextState,
-    events: [],
-  }
 }
 
 function validateDeclareBlocksAction(state: GameState, action: DeclareBlocksAction): void {
@@ -117,5 +119,6 @@ function assignBlockersToCombatSlots(state: GameState, action: DeclareBlocksActi
     }
 
     slot.blocker = blockerUnit
+    slot.wasBlocked = true
   }
 }
