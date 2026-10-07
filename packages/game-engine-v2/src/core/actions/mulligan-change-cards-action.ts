@@ -1,12 +1,13 @@
-import { INIT_ENERGY } from '~/constants/game'
 import type { MulliganChangeCardsAction } from '~/types/action.types'
 import { GAME_EVENT_TYPE, type GameEvent, type MulliganCompletedEvent } from '~/types/event.types'
 import { PHASE, type GameState, type PlayerState } from '~/types/game-state.types'
 import { createRng } from '~/utils/create-rng'
+import { getPlayer } from '~/utils/get-player'
 import { getSecondPlayer } from '~/utils/get-second-player'
 import { shuffle } from '~/utils/shuffle'
 
 import type { ApplyActionResult } from '../apply-action'
+import { startRound } from '../start-round'
 
 export function mulliganChangeCardsAction(
   state: GameState,
@@ -16,11 +17,7 @@ export function mulliganChangeCardsAction(
     throw new Error('Cannot change cards in this phase')
   }
 
-  const player = state.players[action.playerId]
-
-  if (!player) {
-    throw new Error('Player not found')
-  }
+  const player = getPlayer(state.players, action.playerId)
 
   if (player.mulliganCompleted) {
     throw new Error('Player already completed mulligan')
@@ -87,35 +84,5 @@ function completeMulligan(state: GameState, player: PlayerState, events: GameEve
     return
   }
 
-  state.phase = PHASE.PLAYING
-  state.round = 1
-
-  const players = Object.values(state.players)
-
-  events.push({
-    type: GAME_EVENT_TYPE.ROUND_STARTED,
-    initiativePlayerId: state.initiativePlayerId,
-    round: state.round,
-  })
-
-  for (const currentPlayer of players) {
-    currentPlayer.maxEnergy = INIT_ENERGY
-    currentPlayer.energy = INIT_ENERGY
-
-    events.push({
-      type: GAME_EVENT_TYPE.ENERGY_CHANGED,
-      playerId: currentPlayer.id,
-      energy: currentPlayer.energy,
-    })
-
-    const drawCard = currentPlayer.deck.shift()!
-
-    currentPlayer.hand.push(drawCard)
-
-    events.push({
-      type: GAME_EVENT_TYPE.CARD_DRAWN,
-      playerId: currentPlayer.id,
-      cardInstanceId: drawCard.instanceId,
-    })
-  }
+  startRound(state, events)
 }

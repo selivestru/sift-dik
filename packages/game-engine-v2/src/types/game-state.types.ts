@@ -19,9 +19,17 @@ export interface CombatSlot {
   blockerId: string | null
 }
 
+export const COMBAT_STAGE = {
+  AWAITING_BLOCKS: 'awaiting_blocks',
+  AWAITING_RESPONSE: 'awaiting_response',
+} as const
+
+export type CombatStage = (typeof COMBAT_STAGE)[keyof typeof COMBAT_STAGE]
+
 export interface CombatState {
   attackerPlayerId: string
   defenderPlayerId: string
+  stage: CombatStage
   slots: CombatSlot[]
 }
 

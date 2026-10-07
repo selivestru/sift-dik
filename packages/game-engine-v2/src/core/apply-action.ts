@@ -17,7 +17,7 @@ export interface ApplyActionResult {
 export const applyAction = (state: GameState, action: GameAction): ApplyActionResult => {
   const result = gameActionSchema.safeParse(action)
 
-  if (result.error) {
+  if (!result.success) {
     throw new Error(result.error.message)
   }
 

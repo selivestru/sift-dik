@@ -2,6 +2,7 @@ import { MAX_UNITS_ON_BOARD } from '~/constants/game'
 import type { PlayUnitAction } from '~/types/action.types'
 import { GAME_EVENT_TYPE, type GameEvent } from '~/types/event.types'
 import { PHASE, type GameState } from '~/types/game-state.types'
+import { getPlayer } from '~/utils/get-player'
 import { getSecondPlayer } from '~/utils/get-second-player'
 
 import type { ApplyActionResult } from '../apply-action'
@@ -11,11 +12,11 @@ export function playUnitAction(state: GameState, action: PlayUnitAction): ApplyA
     throw new Error('Cannot play cards in this phase')
   }
 
-  const player = state.players[action.playerId]
-
-  if (!player) {
-    throw new Error('Player not found')
+  if (state.combat) {
+    throw new Error('Cannot play units during combat')
   }
+
+  const player = getPlayer(state.players, action.playerId)
 
   if (state.turnPlayerId !== player.id) {
     throw new Error("Not player's turn")

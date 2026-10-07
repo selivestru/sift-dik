@@ -78,25 +78,29 @@ describe('play unit with replacement', () => {
     expect(state).toEqual(before)
   })
 
-  it.each(['missing', 'opponent', 'hand', 'deck', 'no-selection', 'no-energy'])(
-    'rejects %s without changing the original state',
-    (scenario) => {
-      const { state, player, action } = setup()
-      if (scenario === 'missing') action.replaceInstanceId = 'missing'
-      if (scenario === 'opponent') {
-        const opponent = Object.values(state.players).find((p) => p.id !== player.id)!
-        opponent.board.push(opponent.deck.shift()!)
-        action.replaceInstanceId = opponent.board[0].instanceId
-      }
-      if (scenario === 'hand') action.replaceInstanceId = player.hand[0].instanceId
-      if (scenario === 'deck') action.replaceInstanceId = player.deck[0].instanceId
-      if (scenario === 'no-selection') action.replaceInstanceId = undefined
-      if (scenario === 'no-energy') player.energy = 0
-      const before = structuredClone(state)
-      expect(() => applyAction(state, action)).toThrow()
-      expect(state).toEqual(before)
-    },
-  )
+  it.each([
+    ['missing', 'Unit to replace not on player board'],
+    ['opponent', 'Unit to replace not on player board'],
+    ['hand', 'Unit to replace not on player board'],
+    ['deck', 'Unit to replace not on player board'],
+    ['no-selection', 'Cannot play more cards'],
+    ['no-energy', 'Not enough energy to play card'],
+  ])('rejects %s without changing the original state', (scenario, message) => {
+    const { state, player, action } = setup()
+    if (scenario === 'missing') action.replaceInstanceId = 'missing'
+    if (scenario === 'opponent') {
+      const opponent = Object.values(state.players).find((p) => p.id !== player.id)!
+      opponent.board.push(opponent.deck.shift()!)
+      action.replaceInstanceId = opponent.board[0].instanceId
+    }
+    if (scenario === 'hand') action.replaceInstanceId = player.hand[0].instanceId
+    if (scenario === 'deck') action.replaceInstanceId = player.deck[0].instanceId
+    if (scenario === 'no-selection') action.replaceInstanceId = undefined
+    if (scenario === 'no-energy') player.energy = 0
+    const before = structuredClone(state)
+    expect(() => applyAction(state, action)).toThrow(message)
+    expect(state).toEqual(before)
+  })
 
   it('rejects replacement on a non-full board and allows an ordinary play', () => {
     const { state, action } = setup(5)

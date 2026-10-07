@@ -104,6 +104,7 @@ describe('mulligan completed event', () => {
     for (const player of Object.values(result.state.players)) {
       expect(player.hand).toHaveLength(5)
       expect(player.energy).toBe(1)
+      expect(player.reservedEnergy).toBe(0)
     }
   })
 })
