@@ -14,6 +14,7 @@ const playUnitActionSchema = z.object({
   type: z.literal(GAME_ACTION_TYPE.PLAY_UNIT),
   playerId: nonEmptyId,
   cardInstanceId: nonEmptyId,
+  replaceInstanceId: nonEmptyId.optional(),
 })
 
 const declareAttacksActionSchema = z.object({

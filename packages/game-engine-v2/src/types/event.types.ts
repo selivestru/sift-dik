@@ -2,6 +2,8 @@ export const GAME_EVENT_TYPE = {
   MULLIGAN_COMPLETED: 'mulligan_completed',
   ENERGY_CHANGED: 'energy_changed',
   CARD_DRAWN: 'card_drawn',
+  UNIT_PLAYED: 'unit_played',
+  UNIT_OBLITERATED: 'unit_obliterated',
   ROUND_STARTED: 'round_started',
   ROUND_ENDED: 'round_ended',
 } as const
@@ -27,6 +29,18 @@ export interface CardDrawnEvent {
   cardInstanceId: string
 }
 
+export interface UnitPlayedEvent {
+  type: typeof GAME_EVENT_TYPE.UNIT_PLAYED
+  playerId: string
+  cardInstanceId: string
+}
+
+export interface UnitObliteratedEvent {
+  type: typeof GAME_EVENT_TYPE.UNIT_OBLITERATED
+  playerId: string
+  cardInstanceId: string
+}
+
 export interface RoundStartedEvent {
   type: typeof GAME_EVENT_TYPE.ROUND_STARTED
   round: number
@@ -42,5 +56,7 @@ export type GameEvent =
   | MulliganCompletedEvent
   | EnergyChangedEvent
   | CardDrawnEvent
+  | UnitPlayedEvent
+  | UnitObliteratedEvent
   | RoundStartedEvent
   | RoundEndedEvent
