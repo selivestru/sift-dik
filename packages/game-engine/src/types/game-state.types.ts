@@ -1,4 +1,4 @@
-import type { CardInstance, SpellCardInstance, UnitCardInstance } from './card.types'
+import type { CardInstance, UnitCardInstance } from './card.types'
 
 export interface PlayerState {
   id: string
@@ -6,44 +6,49 @@ export interface PlayerState {
   maxEnergy: number
   energy: number
   reservedEnergy: number
+  mulliganCompleted: boolean
+  hasAttackToken: boolean
   deck: CardInstance[]
   hand: CardInstance[]
   board: UnitCardInstance[]
   graveyard: CardInstance[]
-  hasAttackToken: boolean
 }
 
 export interface CombatSlot {
-  attacker: UnitCardInstance
-  blocker: UnitCardInstance | null
-  wasBlocked?: boolean
+  attackerId: string
+  blockerId: string | null
 }
+
+export const COMBAT_STAGE = {
+  AWAITING_BLOCKS: 'awaiting_blocks',
+  AWAITING_RESPONSE: 'awaiting_response',
+} as const
+
+export type CombatStage = (typeof COMBAT_STAGE)[keyof typeof COMBAT_STAGE]
 
 export interface CombatState {
   attackerPlayerId: string
   defenderPlayerId: string
-  blocksDeclared: boolean
+  stage: CombatStage
   slots: CombatSlot[]
 }
 
-export interface StackSpell {
-  spell: SpellCardInstance
-  targets?: string[]
-  payload?: Record<string, unknown>
-}
+export const PHASE = {
+  MULLIGAN: 'mulligan',
+  PLAYING: 'playing',
+  FINISHED: 'finished',
+} as const
+
+export type Phase = (typeof PHASE)[keyof typeof PHASE]
 
 export interface GameState {
-  phase: 'mulligan' | 'playing' | 'finished'
-  randomState: number
-  mulligan: Record<string, string[] | null> | null
-  players: Record<string, PlayerState>
+  phase: Phase
+  rngState: number
   round: number
+  players: Record<string, PlayerState>
   initiativePlayerId: string
   turnPlayerId: string
   combat: CombatState | null
-  spellStack: StackSpell[]
-  stackInitiatorPlayerId: string | null
   winnerPlayerId: string | null
-  isDraw: boolean
   consecutivePasses: number
 }

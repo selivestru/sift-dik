@@ -5,8 +5,5 @@
   "editor.codeActionsOnSave": {
     "source.format.oxc": "always"
   },
-  "oxc.typeAware": true,
-  "search.exclude": {
-    ".agents": true
-  }
+  "oxc.typeAware": true
 }

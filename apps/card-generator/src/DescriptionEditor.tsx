@@ -1,10 +1,9 @@
-/* oxlint-disable jsx-a11y/prefer-tag-over-role -- A rich text editor requires a contentEditable textbox. */
 import { useLayoutEffect, useRef, useState } from 'react'
 
-import { normalizeDescription } from './generator/description'
 import type { DescriptionPart } from './generator/description'
-import { keywords } from './generator/keywords'
+import { normalizeDescription } from './generator/description'
 import type { KeywordId } from './generator/keywords'
+import { keywords } from './generator/keywords'
 
 function keywordChip(id: KeywordId): HTMLElement {
   const keyword = keywords.find((item) => item.id === id)!

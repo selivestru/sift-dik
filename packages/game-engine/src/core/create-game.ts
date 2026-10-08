@@ -1,65 +1,44 @@
 import { MAX_REPUTATION } from '../constants/game'
-import type { CardDefinition, CardInstance, GameState } from '../types'
-import { nextRandom } from '../utils/createRng'
-import { randomItem } from '../utils/randomItem'
+import { compiledCheckPlayers } from '../schemas/create-game.schema'
+import type { CardDefinition, CardInstance } from '../types/card.types'
+import { PHASE, type GameState, type PlayerState } from '../types/game-state.types'
+import { createRng } from '../utils/create-rng'
+import { randomItem } from '../utils/random-item'
 import { shuffle } from '../utils/shuffle'
 
-export interface CreateGamePlayer {
+interface CreateGamePlayer {
   id: string
   cards: CardDefinition[]
 }
 
-export interface CreateGameOptions {
+interface CreateGameOptions {
   seed?: number
 }
 
-export const createGame = (
+export function createGame(
   players: [CreateGamePlayer, CreateGamePlayer],
   options?: CreateGameOptions,
-): GameState => {
-  const random = { randomState: (options?.seed ?? 0) >>> 0 }
-  const rng = () => nextRandom(random)
+) {
+  const checkResult = compiledCheckPlayers.safeParse(players)
 
-  if (
-    players.length !== 2 ||
-    players.some((player) => !player.id) ||
-    players[0].id === players[1].id
-  ) {
-    throw new Error('A game requires two distinct nonempty player IDs')
+  if (!checkResult.success) {
+    throw new Error(checkResult.error.message)
   }
 
-  if (players.some((player) => player.cards.length < 4)) {
-    throw new Error('Each deck must contain at least four cards')
+  const validPlayers = checkResult.data
+
+  const random = {
+    rngState: (options?.seed ?? Math.floor(Math.random() * 0x100000000)) >>> 0,
   }
+  const rng = createRng(random)
 
-  if (
-    options?.seed !== undefined &&
-    (!Number.isInteger(options.seed) || !Number.isFinite(options.seed))
-  ) {
-    throw new Error('Game seed must be a finite integer')
-  }
+  const initiativePlayer = randomItem(validPlayers, rng)
 
-  const initiativePlayer = randomItem(players, rng)
+  const playerStates: [string, PlayerState][] = []
 
-  const gameState: GameState = {
-    phase: 'mulligan',
-    randomState: random.randomState,
-    mulligan: Object.fromEntries(players.map((player) => [player.id, null])),
-    players: Object.create(null),
-    round: 0,
-    initiativePlayerId: initiativePlayer.id,
-    turnPlayerId: initiativePlayer.id,
-    combat: null,
-    spellStack: [],
-    stackInitiatorPlayerId: null,
-    winnerPlayerId: null,
-    isDraw: false,
-    consecutivePasses: 0,
-  }
-
-  for (const player of players) {
+  for (const player of validPlayers) {
     const cardInstances: CardInstance[] = player.cards.map((card, index) => ({
-      ...structuredClone(card),
+      ...card,
       instanceId: `${player.id}-card-${index + 1}`,
       ownerId: player.id,
     }))
@@ -67,21 +46,35 @@ export const createGame = (
     const deckCards = shuffle(cardInstances, rng)
     const handCards = deckCards.splice(0, 4)
 
-    gameState.players[player.id] = {
-      id: player.id,
-      reputation: MAX_REPUTATION,
-      maxEnergy: 0,
-      energy: 0,
-      reservedEnergy: 0,
-      deck: deckCards,
-      hand: handCards,
-      board: [],
-      graveyard: [],
-      hasAttackToken: false,
-    }
+    playerStates.push([
+      player.id,
+      {
+        id: player.id,
+        reputation: MAX_REPUTATION,
+        maxEnergy: 0,
+        energy: 0,
+        reservedEnergy: 0,
+        mulliganCompleted: false,
+        hasAttackToken: initiativePlayer.id === player.id,
+        deck: deckCards,
+        hand: handCards,
+        board: [],
+        graveyard: [],
+      },
+    ])
   }
 
-  gameState.randomState = random.randomState
+  const gameState: GameState = {
+    phase: PHASE.MULLIGAN,
+    rngState: random.rngState,
+    round: 0,
+    players: Object.fromEntries(playerStates),
+    initiativePlayerId: initiativePlayer.id,
+    turnPlayerId: initiativePlayer.id,
+    combat: null,
+    winnerPlayerId: null,
+    consecutivePasses: 0,
+  }
 
   return gameState
 }

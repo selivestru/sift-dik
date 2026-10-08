@@ -1,5 +1,5 @@
-import { spellSpeeds } from './generator/spell-speeds'
 import type { SpellSpeed } from './generator/spell-speeds'
+import { spellSpeeds } from './generator/spell-speeds'
 
 export default function SpellSpeedTabs({
   value,

@@ -1,124 +1,85 @@
-import { KEYWORD, type DeclareBlocksAction, type GameState } from '../../types'
-import type { ApplyActionResult } from '../apply-action'
-import { finishCombat, resolvePendingSequence } from './pass-action'
-import { playSpells } from './play-spell-action'
+import type { DeclareBlocksAction } from '~/types/action.types'
+import { GAME_EVENT_TYPE, type GameEvent } from '~/types/event.types'
+import { COMBAT_STAGE, PHASE, type GameState } from '~/types/game-state.types'
+import { getPlayer } from '~/utils/get-player'
 
-export const declareBlocksAction = (
+import type { ApplyActionResult } from '../apply-action'
+import { resolveCombat } from '../resolve-combat'
+
+export function declareBlocksAction(
   state: GameState,
   action: DeclareBlocksAction,
-): ApplyActionResult => {
-  const nextState = state
-
-  validateDeclareBlocksAction(nextState, action)
-  assignBlockersToCombatSlots(nextState, action)
-
-  nextState.combat!.blocksDeclared = true
-  nextState.consecutivePasses = 0
-  const events: ApplyActionResult['events'] = []
-  const addedSpells = action.spells?.length ? playSpells(nextState, events, action.playerId, action.spells) : false
-  if (nextState.winnerPlayerId === null) {
-    if (addedSpells) nextState.turnPlayerId = nextState.combat!.attackerPlayerId
-    else if (nextState.spellStack.length > 0) resolvePendingSequence(nextState, events)
-    else finishCombat(nextState, events)
-  }
-  return { state: nextState, events }
-
-}
-
-function validateDeclareBlocksAction(state: GameState, action: DeclareBlocksAction): void {
-  if (state.winnerPlayerId !== null) {
-    throw new Error(`Game has already ended. Winner: ${state.winnerPlayerId}`)
+): ApplyActionResult {
+  if (state.phase !== PHASE.PLAYING) {
+    throw new Error('Cannot declare blocks in this phase')
   }
 
-  if (state.combat === null) {
-    throw new Error('Cannot declare blocks: no combat is currently in progress')
+  const combat = state.combat
+
+  if (!combat) {
+    throw new Error('No active combat')
   }
 
-  if (state.combat.blocksDeclared) {
-    throw new Error('Cannot declare blocks: blockers have already been declared this combat')
+  if (combat.stage !== COMBAT_STAGE.AWAITING_BLOCKS) {
+    throw new Error('Blockers have already been confirmed')
   }
 
-  if (state.turnPlayerId !== action.playerId || state.combat.defenderPlayerId !== action.playerId) {
-    throw new Error(`It is not player "${action.playerId}" turn to declare blocks`)
+  const player = getPlayer(state.players, action.playerId)
+
+  if (combat.defenderPlayerId !== player.id) {
+    throw new Error('Only the defender may declare blocks')
   }
 
-  const attackerIds = action.blocks.map((b) => b.attackerInstanceId)
-  if (new Set(attackerIds).size !== attackerIds.length) {
-    throw new Error('Cannot assign multiple blockers to the same attacker')
+  if (state.turnPlayerId !== player.id) {
+    throw new Error("Not player's turn")
   }
 
-  const defenderIds = action.blocks.map((b) => b.defenderInstanceId)
-  if (new Set(defenderIds).size !== defenderIds.length) {
-    throw new Error('Cannot assign the same defender unit to multiple attackers')
-  }
+  const attackerIds = new Set(combat.slots.map((slot) => slot.attackerId))
+  const blockerIds = new Set(player.board.map((unit) => unit.instanceId))
 
-  const combatAttackerIds = new Set(state.combat.slots.map((s) => s.attacker.instanceId))
-  const allAttackersValid = attackerIds.every((id) => combatAttackerIds.has(id))
-  if (!allAttackersValid) {
-    throw new Error('One or more targeted attackers are not present in current combat slots')
-  }
-
-  const defenderState = state.players[action.playerId]!
-  const defenderBoardIds = new Set(defenderState.board.map((u) => u.instanceId))
-  const allDefendersValid = defenderIds.every((id) => defenderBoardIds.has(id))
-  if (!allDefendersValid) {
-    throw new Error(
-      `Cannot declare block: one or more defender units are not present on player "${action.playerId}" board`,
-    )
-  }
-}
-
-function assignBlockersToCombatSlots(state: GameState, action: DeclareBlocksAction): void {
-  const defenderState = state.players[action.playerId]!
-  const blockerIdSet = new Set(action.blocks.map((b) => b.defenderInstanceId))
-  const blockerUnits = defenderState.board.filter((u) => blockerIdSet.has(u.instanceId))
-
-  const hasCannotBlockUnit = blockerUnits.some((unit) =>
-    unit.keywords?.includes(KEYWORD.CANNOT_BLOCK),
+  const attackersInCombat = action.blocks.every((block) =>
+    attackerIds.has(block.attackerInstanceId),
   )
-  if (hasCannotBlockUnit) {
-    throw new Error(
-      'Cannot declare block: one or more defender units have the "cannot_block" keyword',
-    )
+
+  if (!attackersInCombat) {
+    throw new Error('Block references a unit that is not attacking')
   }
 
-  const hasStunnedUnit = blockerUnits.some((unit) => unit.keywords?.includes(KEYWORD.STUNNED))
+  const blockersOnBoard = action.blocks.every((block) => blockerIds.has(block.defenderInstanceId))
 
-  if (hasStunnedUnit) {
-    throw new Error(
-      `Cannot declare block: one or more defender units have the "${KEYWORD.STUNNED}" keyword`,
-    )
+  if (!blockersOnBoard) {
+    throw new Error('Blocker is not on defender board')
   }
 
-  defenderState.board = defenderState.board.filter((u) => !blockerIdSet.has(u.instanceId))
+  const blocksByAttacker = new Map(
+    action.blocks.map((block) => [block.attackerInstanceId, block.defenderInstanceId]),
+  )
 
-  for (const block of action.blocks) {
-    const slot = state.combat!.slots.find(
-      (s) => s.attacker.instanceId === block.attackerInstanceId,
-    )!
-    const blockerUnit = blockerUnits.find((u) => u.instanceId === block.defenderInstanceId)!
+  combat.slots = combat.slots.map((slot) => ({
+    ...slot,
+    blockerId: blocksByAttacker.get(slot.attackerId) ?? null,
+  }))
 
-    const attackerIsElusive = slot.attacker.keywords?.includes(KEYWORD.ELUSIVE)
-    const blockerIsElusive = blockerUnit.keywords?.includes(KEYWORD.ELUSIVE)
+  const events: GameEvent[] = [
+    {
+      type: GAME_EVENT_TYPE.BLOCKS_DECLARED,
+      attackerPlayerId: combat.attackerPlayerId,
+      defenderPlayerId: player.id,
+      slots: combat.slots.map((slot) => ({ ...slot })),
+    },
+  ]
 
-    if (attackerIsElusive && !blockerIsElusive) {
-      throw new Error(
-        `Cannot declare block: unit "${blockerUnit.instanceId}" cannot block elusive attacker "${slot.attacker.instanceId}"`,
-      )
-    }
+  if (action.blocks.length === 0) {
+    return resolveCombat(state, events)
+  }
 
-    const attackerIsPressure = slot.attacker.keywords?.includes(KEYWORD.PRESSURE)
-    if (attackerIsPressure && blockerUnit.attack < 3) {
-      throw new Error(
-        `Cannot declare block: unit "${blockerUnit.instanceId}" has less than 3 attack and cannot block pressure attacker "${slot.attacker.instanceId}"`,
-      )
-    }
+  combat.stage = COMBAT_STAGE.AWAITING_RESPONSE
 
-    if (slot.blocker) {
-      throw new Error('Cannot declare block: one or more attackers already have a forced blocker')
-    }
+  state.turnPlayerId = combat.attackerPlayerId
+  state.consecutivePasses = 0
 
-    slot.blocker = blockerUnit
-    slot.wasBlocked = true
+  return {
+    state,
+    events,
   }
 }

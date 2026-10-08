@@ -1,78 +1,34 @@
-import type { AbilityContextInput } from './abilities.types'
+import z from 'zod'
+
+import type { gameActionSchema } from '~/schemas/action.schema'
 
 export const GAME_ACTION_TYPE = {
-  MULLIGAN: 'MULLIGAN',
-  PLAY_UNIT: 'PLAY_UNIT',
-  DECLARE_ATTACKS: 'DECLARE_ATTACKS',
-  DECLARE_BLOCKS: 'DECLARE_BLOCKS',
-  PASS: 'PASS',
-  PLAY_SPELL: 'PLAY_SPELL',
-  PLAY_SPELLS: 'PLAY_SPELLS',
+  MULLIGAN_CHANGE_CARDS: 'mulligan_change_cards',
+  PLAY_UNIT: 'play_unit',
+  DECLARE_ATTACKS: 'declare_attacks',
+  DECLARE_BLOCKS: 'declare_blocks',
+  PASS: 'pass',
 } as const
 
 export type GameActionType = (typeof GAME_ACTION_TYPE)[keyof typeof GAME_ACTION_TYPE]
 
-export interface PlayUnitAction {
-  type: typeof GAME_ACTION_TYPE.PLAY_UNIT
-  playerId: string
-  cardInstanceId: string
-  abilityContexts?: AbilityContextInput
-}
+export type GameAction = z.infer<typeof gameActionSchema>
 
-export interface DeclareAttacksAction {
-  type: typeof GAME_ACTION_TYPE.DECLARE_ATTACKS
-  playerId: string
-  attackers: string[]
-  spells?: SpellPlay[]
-  forcedBlockers?: {
-    attackerInstanceId: string
-    defenderInstanceId: string
-  }[]
-}
+export type MulliganChangeCardsAction = Extract<
+  GameAction,
+  { type: typeof GAME_ACTION_TYPE.MULLIGAN_CHANGE_CARDS }
+>
 
-export interface DeclareBlocksAction {
-  type: typeof GAME_ACTION_TYPE.DECLARE_BLOCKS
-  playerId: string
-  spells?: SpellPlay[]
-  blocks: {
-    attackerInstanceId: string
-    defenderInstanceId: string
-  }[]
-}
+export type PlayUnitAction = Extract<GameAction, { type: typeof GAME_ACTION_TYPE.PLAY_UNIT }>
 
-export interface PassAction {
-  type: typeof GAME_ACTION_TYPE.PASS
-  playerId: string
-}
+export type DeclareAttacksAction = Extract<
+  GameAction,
+  { type: typeof GAME_ACTION_TYPE.DECLARE_ATTACKS }
+>
 
-export interface SpellPlay {
-  cardInstanceId: string
-  targets?: string[]
-  payload?: Record<string, unknown>
-}
+export type DeclareBlocksAction = Extract<
+  GameAction,
+  { type: typeof GAME_ACTION_TYPE.DECLARE_BLOCKS }
+>
 
-export interface PlaySpellAction extends SpellPlay {
-  type: typeof GAME_ACTION_TYPE.PLAY_SPELL
-  playerId: string
-}
-
-export interface PlaySpellsAction {
-  type: typeof GAME_ACTION_TYPE.PLAY_SPELLS
-  playerId: string
-  spells: SpellPlay[]
-}
-
-export type GameAction =
-  | MulliganAction
-  | PlayUnitAction
-  | DeclareAttacksAction
-  | DeclareBlocksAction
-  | PassAction
-  | PlaySpellAction
-  | PlaySpellsAction
-
-export interface MulliganAction {
-  type: typeof GAME_ACTION_TYPE.MULLIGAN
-  playerId: string
-  cardInstanceIds: string[]
-}
+export type PassAction = Extract<GameAction, { type: typeof GAME_ACTION_TYPE.PASS }>

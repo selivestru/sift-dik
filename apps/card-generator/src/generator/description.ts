@@ -1,5 +1,5 @@
-import { keywords } from './keywords'
 import type { KeywordId } from './keywords'
+import { keywords } from './keywords'
 
 export type DescriptionPart =
   | { type: 'text'; text: string; highlighted?: boolean }

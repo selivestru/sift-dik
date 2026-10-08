@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
-import { keywords } from './generator/keywords'
 import type { KeywordId } from './generator/keywords'
+import { keywords } from './generator/keywords'
 
 export default function KeywordPicker({
   selected,

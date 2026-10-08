@@ -1,10 +1,10 @@
 import type { DescriptionPart } from './description'
-import { keywords } from './keywords'
 import type { KeywordId, KeywordImages } from './keywords'
-import { spellSpeeds } from './spell-speeds'
+import { keywords } from './keywords'
 import type { SpellSpeed, SpellSpeedImages } from './spell-speeds'
-import { CARD_FONT, CARD_TITLE_FONT, CARD_HEIGHT, CARD_WIDTH, templates } from './templates'
+import { spellSpeeds } from './spell-speeds'
 import type { CardType, Point, Rect } from './templates'
+import { CARD_FONT, CARD_HEIGHT, CARD_TITLE_FONT, CARD_WIDTH, templates } from './templates'
 
 export interface CardData {
   type: CardType

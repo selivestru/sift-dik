@@ -1,5 +1,5 @@
-import { factions } from './generator/factions'
 import type { FactionId } from './generator/factions'
+import { factions } from './generator/factions'
 
 export default function FactionTabs({
   value,

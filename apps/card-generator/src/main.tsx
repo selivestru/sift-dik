@@ -1,13 +1,13 @@
 import { createRoot } from 'react-dom/client'
 
 import App from './App'
-import { factions } from './generator/factions'
 import type { FactionImages } from './generator/factions'
-import { keywords } from './generator/keywords'
+import { factions } from './generator/factions'
 import type { KeywordImages } from './generator/keywords'
+import { keywords } from './generator/keywords'
 import { loadImage } from './generator/render'
-import { spellSpeeds } from './generator/spell-speeds'
 import type { SpellSpeedImages } from './generator/spell-speeds'
+import { spellSpeeds } from './generator/spell-speeds'
 
 import './style.css'
 

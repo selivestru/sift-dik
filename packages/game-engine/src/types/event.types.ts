@@ -1,25 +1,44 @@
-import type { UnitCardInstance } from './card.types'
+import type { CombatSlot } from './game-state.types'
 
 export const GAME_EVENT_TYPE = {
-  ENERGY_CHANGED: 'ENERGY_CHANGED',
-  CARD_DRAWN: 'CARD_DRAWN',
-  CARD_DISCARDED: 'CARD_DISCARDED',
-  UNIT_SPAWNED: 'UNIT_SPAWNED',
-  DAMAGE_DEALT: 'DAMAGE_DEALT',
-  HEAL_DEALT: 'HEAL_DEALT',
-  UNIT_DIED: 'UNIT_DIED',
-  ROUND_STARTED: 'ROUND_STARTED',
-  ROUND_ENDED: 'ROUND_ENDED',
-  GAME_OVER: 'GAME_OVER',
+  MULLIGAN_COMPLETED: 'mulligan_completed',
+  ENERGY_CHANGED: 'energy_changed',
+  RESERVED_ENERGY_CHANGED: 'reserved_energy_changed',
+  CARD_DRAWN: 'card_drawn',
+  UNIT_PLAYED: 'unit_played',
+  ATTACK_DECLARED: 'attack_declared',
+  BLOCKS_DECLARED: 'blocks_declared',
+  COMBAT_DAMAGE_RESOLVED: 'combat_damage_resolved',
+  UNIT_DIED: 'unit_died',
+  COMBAT_RESOLVED: 'combat_resolved',
+  UNIT_OBLITERATED: 'unit_obliterated',
+  ROUND_STARTED: 'round_started',
+  ROUND_ENDED: 'round_ended',
+  PLAYER_PASSED: 'player_passed',
+  CARD_OBLITERATED: 'card_obliterated',
+  GAME_OVER: 'game_over',
 } as const
 
 export type GameEventType = (typeof GAME_EVENT_TYPE)[keyof typeof GAME_EVENT_TYPE]
+
+export interface MulliganCompletedEvent {
+  type: typeof GAME_EVENT_TYPE.MULLIGAN_COMPLETED
+  playerId: string
+  replacedCardInstanceIds: string[]
+  receivedCardInstanceIds: string[]
+}
 
 export interface EnergyChangedEvent {
   type: typeof GAME_EVENT_TYPE.ENERGY_CHANGED
   playerId: string
   energy: number
-  isReserved: boolean
+}
+
+export interface ReservedEnergyChangedEvent {
+  type: typeof GAME_EVENT_TYPE.RESERVED_ENERGY_CHANGED
+  playerId: string
+  reservedEnergy: number
+  bankedEnergy: number
 }
 
 export interface CardDrawnEvent {
@@ -28,35 +47,60 @@ export interface CardDrawnEvent {
   cardInstanceId: string
 }
 
-export interface CardDiscardedEvent {
-  type: typeof GAME_EVENT_TYPE.CARD_DISCARDED
+export interface UnitPlayedEvent {
+  type: typeof GAME_EVENT_TYPE.UNIT_PLAYED
   playerId: string
   cardInstanceId: string
 }
 
-export interface UnitSpawnedEvent {
-  type: typeof GAME_EVENT_TYPE.UNIT_SPAWNED
+export interface AttackDeclaredEvent {
+  type: typeof GAME_EVENT_TYPE.ATTACK_DECLARED
+  attackerPlayerId: string
+  defenderPlayerId: string
+  attackerInstanceIds: string[]
+}
+
+export interface UnitObliteratedEvent {
+  type: typeof GAME_EVENT_TYPE.UNIT_OBLITERATED
   playerId: string
-  unit: UnitCardInstance
+  cardInstanceId: string
 }
 
-export interface DamageDealtEvent {
-  type: typeof GAME_EVENT_TYPE.DAMAGE_DEALT
-  targetId: string
-  amount: number
-  isReputation: boolean
+export interface BlocksDeclaredEvent {
+  type: typeof GAME_EVENT_TYPE.BLOCKS_DECLARED
+  attackerPlayerId: string
+  defenderPlayerId: string
+  slots: CombatSlot[]
 }
 
-export interface HealDealtEvent {
-  type: typeof GAME_EVENT_TYPE.HEAL_DEALT
-  targetId: string
+export type CombatDamageTarget =
+  | { type: 'unit'; playerId: string; cardInstanceId: string; health: number }
+  | { type: 'reputation'; playerId: string; reputation: number }
+
+export interface CombatDamageStrike {
+  sourceInstanceId: string
   amount: number
-  isReputation: boolean
+  target: CombatDamageTarget
+}
+
+export interface CombatDamageResolvedEvent {
+  type: typeof GAME_EVENT_TYPE.COMBAT_DAMAGE_RESOLVED
+  slotIndex: number
+  attackerId: string
+  blockerId: string | null
+  strikes: CombatDamageStrike[]
 }
 
 export interface UnitDiedEvent {
   type: typeof GAME_EVENT_TYPE.UNIT_DIED
-  unitInstanceId: string
+  playerId: string
+  cardInstanceId: string
+}
+
+export interface CombatResolvedEvent {
+  type: typeof GAME_EVENT_TYPE.COMBAT_RESOLVED
+  attackerPlayerId: string
+  defenderPlayerId: string
 }
 
 export interface RoundStartedEvent {
@@ -70,19 +114,36 @@ export interface RoundEndedEvent {
   round: number
 }
 
+export interface PlayerPassedEvent {
+  type: typeof GAME_EVENT_TYPE.PLAYER_PASSED
+  playerId: string
+}
+
+export interface CardObliteratedEvent {
+  type: typeof GAME_EVENT_TYPE.CARD_OBLITERATED
+  playerId: string
+  cardInstanceId: string
+}
+
 export interface GameOverEvent {
   type: typeof GAME_EVENT_TYPE.GAME_OVER
   winnerPlayerId: string | null
 }
 
 export type GameEvent =
+  | MulliganCompletedEvent
   | EnergyChangedEvent
+  | ReservedEnergyChangedEvent
   | CardDrawnEvent
-  | CardDiscardedEvent
-  | UnitSpawnedEvent
-  | DamageDealtEvent
-  | HealDealtEvent
+  | UnitPlayedEvent
+  | AttackDeclaredEvent
+  | BlocksDeclaredEvent
+  | CombatDamageResolvedEvent
   | UnitDiedEvent
+  | CombatResolvedEvent
+  | UnitObliteratedEvent
   | RoundStartedEvent
   | RoundEndedEvent
+  | PlayerPassedEvent
+  | CardObliteratedEvent
   | GameOverEvent
