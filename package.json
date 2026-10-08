@@ -1,0 +1,46 @@
+{
+  "name": "sift-dik",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "packages/game-engine"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev:web": "vp -C apps/web dev",
+    "build:web": "vp -C apps/web run build",
+    "preview:web": "vp -C apps/web preview",
+    "test:engine": "vp -C packages/game-engine test run",
+    "build:engine": "vp -C packages/game-engine run build",
+    "test:web": "vp -C apps/web test run",
+    "dev": "vp dev",
+    "build": "vp run -r build",
+    "check": "vp check",
+    "check:staged": "vp staged",
+    "check:push": "vp check && vp test run",
+    "test": "vp test run",
+    "lint": "vp lint",
+    "format": "vp fmt",
+    "typecheck": "vp run -r typecheck",
+    "prepare": "vp config --no-agent"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "overrides": {
+    "vite": "catalog:",
+    "vitest": "5.0.3"
+  },
+  "engines": {
+    "node": "^22.22.1 || ^24.11.0 || >=26.0.0"
+  },
+  "packageManager": "bun@1.4.2",
+  "catalog": {
+    "typescript": "7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.1.0",
+    "vite-plus": "1.1.0"
+  }
+}

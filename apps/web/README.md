@@ -1,35 +1,30 @@
-# React + TypeScript + Vite
+# SiftDIK Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Сайт на React и TypeScript с Vite+ 1.1.0. Использует Tailwind CSS,
+TanStack Router с автоматической генерацией маршрутов и React Compiler через Babel.
 
-Currently, two official plugins are available:
+Зависимости устанавливаются из корня репозитория:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+vp install
+vp run dev:web
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Dev-сервер запускается на `http://localhost:3000`. Без глобального `vp`
+используйте `bun install` и `bun run dev:web` из корня.
+
+Из `apps/web` доступны команды:
+
+```sh
+bun run check       # форматирование, lint и типы
+bun run typecheck   # TypeScript для приложения и конфига
+bun run build       # проверка типов и production-сборка в dist
+bun run preview     # просмотр production-сборки
+bun run lint        # Vite+ / Oxlint
+bun run format      # Vite+ / Oxfmt
+```
+
+Общие настройки lint и форматирования находятся в корневом `vite.config.ts`.
+Настройки React, Tailwind CSS, React Compiler, путей и TanStack Router —
+в `apps/web/vite.config.ts`. Файл `src/app/routeTree.gen.ts` генерируется
+плагином маршрутизации при запуске и сборке.

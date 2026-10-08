@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 import { applyAction, createGame } from '../index'
 import { GAME_ACTION_TYPE } from '../types/action.types'

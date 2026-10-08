@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 import { resolveCombat } from '../core/resolve-combat'
 import { CARD_FACTION, CARD_TYPE, type UnitCardInstance } from '../types/card.types'

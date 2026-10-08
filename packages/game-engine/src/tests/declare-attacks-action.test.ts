@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 
 import { MAX_UNITS_ON_BOARD } from '../constants/game'
 import { applyAction } from '../core/apply-action'

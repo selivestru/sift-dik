@@ -2,7 +2,7 @@
 
 ## Project Context & Scope
 
-`sift-dik` is a custom two-player card game intended to follow Legends of Runeterra (LoR) mechanics with its own cards, fighters, and factions. `packages/game-engine-v2` is the active rewrite of the legacy `game-engine`, whose implementation became difficult to maintain. Use v2 code and tests as the implementation reference; importing legacy behavior requires review.
+`sift-dik` is a custom two-player card game intended to follow Legends of Runeterra (LoR) mechanics with its own cards, fighters, and factions. `packages/game-engine` contains the active vanilla engine rewrite. Use its current code and tests as the implementation reference; importing legacy behavior requires review.
 
 The current milestone is a complete vanilla match: creation, mulligan, unit play and replacement, attacks, blocks, passes, round transitions, combat damage, and victory. Spells, keywords, triggered abilities, and an effect stack are future work. `reservedEnergy` already accumulates for future spell support, but currently cannot be spent. Full LoR feature parity is a goal, not a claim about the current engine.
 
@@ -22,19 +22,20 @@ This package implements a vanilla, LoR-style card-game engine in TypeScript.
 
 ## Build, Test, and Development Commands
 
-Run commands from `packages/game-engine-v2`:
+Install dependencies from the repository root with `vp install` (or `bun install` without the global CLI). The project uses a Bun workspace and a single root lockfile. Run package commands from `packages/game-engine`:
 
-- `bun install`: install dependencies.
 - `bun run test`: run the complete Vitest suite.
 - `bun run typecheck`: check TypeScript without emitting files.
-- `bun run lint`: lint source with Oxlint.
-- `bun run format`: format source with Oxfmt.
+- `bun run check`: run Vite+ formatting, lint, and type checks.
+- `bun run lint`: lint source through Vite+ / Oxlint.
+- `bun run format`: format source through Vite+ / Oxfmt.
+- `bun run build`: check types and build ESM with declarations through `vp pack`.
 
-The package has no standalone build or development-server script; use tests for local development.
+The package has no development server; use tests for local development. Its package export resolves to `dist/index.mjs` and `dist/index.d.mts`, so build it before consuming it.
 
 ## Coding Style & Naming Conventions
 
-Use TypeScript ES modules, two-space indentation, single quotes, no semicolons, trailing commas, and a 100-column print width. Follow `oxfmt.config.ts` and `oxlint.config.ts`.
+Use TypeScript ES modules, two-space indentation, single quotes, no semicolons, trailing commas, and a 100-column print width. Follow the root `vite.config.ts` for shared lint and format settings.
 
 Use kebab-case filenames (`pass-action.ts`), camelCase functions and variables, PascalCase interfaces, and uppercase constants. Use `import type` for type-only dependencies. The `~/` alias resolves to `src/`.
 
@@ -86,7 +87,7 @@ Networking and persistence belong to consuming applications. The planned backend
 
 ## Testing Guidelines
 
-Name tests `src/tests/<feature>.test.ts` and use Vitest. Run one file with `bun run test -- src/tests/pass-action.test.ts`.
+Name tests `src/tests/<feature>.test.ts` and import Vitest APIs from `vite-plus/test`. Run one file with `bun run test -- src/tests/pass-action.test.ts`.
 
 Cover valid actions, rejected inputs, state immutability, event payloads and ordering, and relevant limits. Update `full-match.test.ts` when changing interactions between combat, passes, rounds, and victory. It covers seeded multi-round matches through lethal damage and deck exhaustion, replay determinism, and conservation of card instances across zones and obliteration. No numeric coverage threshold is configured.
 

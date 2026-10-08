@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
+    "dev": "vp dev",
+    "build": "tsc -b && vp build",
+    "lint": "vp lint",
+    "preview": "vp preview",
+    "check": "vp check",
+    "typecheck": "tsc -b",
+    "format": "vp fmt"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -26,10 +29,8 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "babel-plugin-react-compiler": "^1.0.0",
-    "oxfmt": "^0.72.0",
-    "oxlint": "^1.81.0",
-    "oxlint-tsgolint": "^7.0.2003",
-    "typescript": "~6.0.2",
-    "vite": "^8.3.0"
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
   }
 }
