@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 
 import { Providers } from './providers/Providers'
 
+import './global.css'
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Providers />
